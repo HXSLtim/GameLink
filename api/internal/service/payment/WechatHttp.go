@@ -38,29 +38,29 @@ func NewWeChatAPIClient(appID, mchID, apiKey, certPath, certKey, notifyURL strin
 
 // UnifiedOrderResponse 统一下单响应
 type UnifiedOrderResponse struct {
-	ReturnCode  string `xml:"return_code"`
-	ReturnMsg   string `xml:"return_msg"`
-	AppID       string `xml:"appid,omitempty"`
-	MchID       string `xml:"mch_id,omitempty"`
-	NonceStr    string `xml:"nonce_str,omitempty"`
-	Sign        string `xml:"sign,omitempty"`
-	ResultCode  string `xml:"result_code,omitempty"`
-	ErrCode     string `xml:"err_code,omitempty"`
-	ErrCodeDes  string `xml:"err_code_des,omitempty"`
-	TradeType   string `xml:"trade_type,omitempty"`
-	PrepayID    string `xml:"prepay_id,omitempty"`
-	CodeURL     string `xml:"code_url,omitempty"`
-	MwebURL     string `xml:"mweb_url,omitempty"`
+	ReturnCode string `xml:"return_code"`
+	ReturnMsg  string `xml:"return_msg"`
+	AppID      string `xml:"appid,omitempty"`
+	MchID      string `xml:"mch_id,omitempty"`
+	NonceStr   string `xml:"nonce_str,omitempty"`
+	Sign       string `xml:"sign,omitempty"`
+	ResultCode string `xml:"result_code,omitempty"`
+	ErrCode    string `xml:"err_code,omitempty"`
+	ErrCodeDes string `xml:"err_code_des,omitempty"`
+	TradeType  string `xml:"trade_type,omitempty"`
+	PrepayID   string `xml:"prepay_id,omitempty"`
+	CodeURL    string `xml:"code_url,omitempty"`
+	MwebURL    string `xml:"mweb_url,omitempty"`
 }
 
 // OrderQueryResponse 订单查询响应
 type OrderQueryResponse struct {
 	ReturnCode    string `xml:"return_code"`
 	ReturnMsg     string `xml:"return_msg"`
-	AppID        string `xml:"appid,omitempty"`
-	MchID        string `xml:"mch_id,omitempty`
-	NonceStr     string `xml:"nonce_str,omitempty"`
-	Sign         string `xml:"sign,omitempty"`
+	AppID         string `xml:"appid,omitempty"`
+	MchID         string `xml:"mch_id,omitempty"`
+	NonceStr      string `xml:"nonce_str,omitempty"`
+	Sign          string `xml:"sign,omitempty"`
 	ResultCode    string `xml:"result_code,omitempty"`
 	ErrCode       string `xml:"err_code,omitempty"`
 	ErrCodeDes    string `xml:"err_code_des,omitempty"`
@@ -75,10 +75,10 @@ type OrderQueryResponse struct {
 type RefundResponse struct {
 	ReturnCode    string `xml:"return_code"`
 	ReturnMsg     string `xml:"return_msg"`
-	AppID        string `xml:"appid,omitempty"`
-	MchID        string `xml:"mch_id,omitempty`
-	NonceStr     string `xml:"nonce_str,omitempty"`
-	Sign         string `xml:"sign,omitempty"`
+	AppID         string `xml:"appid,omitempty"`
+	MchID         string `xml:"mch_id,omitempty"`
+	NonceStr      string `xml:"nonce_str,omitempty"`
+	Sign          string `xml:"sign,omitempty"`
 	ResultCode    string `xml:"result_code,omitempty"`
 	ErrCode       string `xml:"err_code,omitempty"`
 	ErrCodeDes    string `xml:"err_code_des,omitempty"`
@@ -95,18 +95,18 @@ type RefundResponse struct {
 func (c *WeChatAPIClient) UnifiedOrder(req UnifiedOrderRequest) (*UnifiedOrderResponse, error) {
 	// 构建请求参数
 	type xmlRequest struct {
-		XMLName         xml.Name `xml:"xml"`
-		AppID           string   `xml:"appid"`
-		MchID           string   `xml:"mch_id"`
-		NonceStr        string   `xml:"nonce_str"`
-		Body            string   `xml:"body"`
-		OutTradeNo      string   `xml:"out_trade_no"`
-		TotalFee        string   `xml:"total_fee"`
-		SpbillCreateIP  string   `xml:"spbill_create_ip"`
-		NotifyURL       string   `xml:"notify_url"`
-		TradeType       string   `xml:"trade_type"`
-		OpenID          string   `xml:"openid,omitempty"`
-		Sign            string   `xml:"sign"`
+		XMLName        xml.Name `xml:"xml"`
+		AppID          string   `xml:"appid"`
+		MchID          string   `xml:"mch_id"`
+		NonceStr       string   `xml:"nonce_str"`
+		Body           string   `xml:"body"`
+		OutTradeNo     string   `xml:"out_trade_no"`
+		TotalFee       string   `xml:"total_fee"`
+		SpbillCreateIP string   `xml:"spbill_create_ip"`
+		NotifyURL      string   `xml:"notify_url"`
+		TradeType      string   `xml:"trade_type"`
+		OpenID         string   `xml:"openid,omitempty"`
+		Sign           string   `xml:"sign"`
 	}
 
 	// 生成签名
@@ -128,17 +128,17 @@ func (c *WeChatAPIClient) UnifiedOrder(req UnifiedOrderRequest) (*UnifiedOrderRe
 	sign := signClient.GenerateSign(params)
 
 	xmlReq := xmlRequest{
-		AppID:           c.appID,
-		MchID:           c.mchID,
-		NonceStr:        req.NonceStr,
-		Body:            req.Body,
-		OutTradeNo:      req.OutTradeNo,
-		TotalFee:        fmt.Sprintf("%d", req.TotalFee),
-		SpbillCreateIP:  req.SpbillCreateIP,
-		NotifyURL:       c.notifyURL,
-		TradeType:       req.TradeType,
-		OpenID:          req.OpenID,
-		Sign:            sign,
+		AppID:          c.appID,
+		MchID:          c.mchID,
+		NonceStr:       req.NonceStr,
+		Body:           req.Body,
+		OutTradeNo:     req.OutTradeNo,
+		TotalFee:       fmt.Sprintf("%d", req.TotalFee),
+		SpbillCreateIP: req.SpbillCreateIP,
+		NotifyURL:      c.notifyURL,
+		TradeType:      req.TradeType,
+		OpenID:         req.OpenID,
+		Sign:           sign,
 	}
 
 	// 编码 XML
@@ -180,9 +180,9 @@ func (c *WeChatAPIClient) OrderQuery(outTradeNo, transactionID string) (*OrderQu
 	nonceStr := generateNonceStr()
 	signClient := NewWeChatClient(c.appID, c.mchID, c.apiKey, c.notifyURL)
 	params := map[string]string{
-		"appid":       c.appID,
-		"mch_id":      c.mchID,
-		"nonce_str":   nonceStr,
+		"appid":        c.appID,
+		"mch_id":       c.mchID,
+		"nonce_str":    nonceStr,
 		"out_trade_no": outTradeNo,
 	}
 	if transactionID != "" {
@@ -226,15 +226,15 @@ func (c *WeChatAPIClient) OrderQuery(outTradeNo, transactionID string) (*OrderQu
 func (c *WeChatAPIClient) Refund(req RefundRequest) (*RefundResponse, error) {
 	// 构建请求参数
 	type xmlRequest struct {
-		XMLName      xml.Name `xml:"xml"`
-		AppID        string   `xml:"appid"`
-		MchID        string   `xml:"mch_id"`
-		NonceStr     string   `xml:"nonce_str"`
-		OutTradeNo   string   `xml:"out_trade_no"`
-		OutRefundNo  string   `xml:"out_refund_no"`
-		TotalFee     string   `xml:"total_fee"`
-		RefundFee    string   `xml:"refund_fee"`
-		Sign         string   `xml:"sign"`
+		XMLName     xml.Name `xml:"xml"`
+		AppID       string   `xml:"appid"`
+		MchID       string   `xml:"mch_id"`
+		NonceStr    string   `xml:"nonce_str"`
+		OutTradeNo  string   `xml:"out_trade_no"`
+		OutRefundNo string   `xml:"out_refund_no"`
+		TotalFee    string   `xml:"total_fee"`
+		RefundFee   string   `xml:"refund_fee"`
+		Sign        string   `xml:"sign"`
 	}
 
 	// 生成签名
@@ -323,25 +323,25 @@ func (c *WeChatAPIClient) doRequest(url string, xmlData []byte, useCert bool) ([
 
 // UnifiedOrderRequest 统一下单请求
 type UnifiedOrderRequest struct {
-	AppID          string `xml:"appid"`                       // 应用 ID
-	MchID          string `xml:"mch_id"`                      // 商户号
-	NonceStr       string `xml:"nonce_str"`                   // 随机字符串
-	Body           string `xml:"body"`                        // 商品描述
-	OutTradeNo     string `xml:"out_trade_no"`                 // 商户订单号
-	TotalFee       int64  `xml:"total_fee"`                    // 订单金额（分）
-	SpbillCreateIP string `xml:"spbill_create_ip"`             // 终端 IP
-	NotifyURL      string `xml:"notify_url"`                   // 通知 URL
-	TradeType      string `xml:"trade_type"`                   // 交易类型
-	OpenID         string `xml:"openid,omitempty"`             // 用户标识（JSAPI）
+	AppID          string `xml:"appid"`            // 应用 ID
+	MchID          string `xml:"mch_id"`           // 商户号
+	NonceStr       string `xml:"nonce_str"`        // 随机字符串
+	Body           string `xml:"body"`             // 商品描述
+	OutTradeNo     string `xml:"out_trade_no"`     // 商户订单号
+	TotalFee       int64  `xml:"total_fee"`        // 订单金额（分）
+	SpbillCreateIP string `xml:"spbill_create_ip"` // 终端 IP
+	NotifyURL      string `xml:"notify_url"`       // 通知 URL
+	TradeType      string `xml:"trade_type"`       // 交易类型
+	OpenID         string `xml:"openid,omitempty"` // 用户标识（JSAPI）
 }
 
 // RefundRequest 退款请求
 type RefundRequest struct {
-	AppID        string `xml:"appid"`        // 应用 ID
-	MchID        string `xml:"mch_id"`       // 商户号
-	NonceStr     string `xml:"nonce_str"`    // 随机字符串
-	OutTradeNo   string `xml:"out_trade_no"`  // 商户订单号
-	OutRefundNo  string `xml:"out_refund_no"` // 商户退款单号
-	TotalFee     int64  `xml:"total_fee"`    // 订单金额（分）
-	RefundFee    int64  `xml:"refund_fee"`   // 退款金额（分）
+	AppID       string `xml:"appid"`         // 应用 ID
+	MchID       string `xml:"mch_id"`        // 商户号
+	NonceStr    string `xml:"nonce_str"`     // 随机字符串
+	OutTradeNo  string `xml:"out_trade_no"`  // 商户订单号
+	OutRefundNo string `xml:"out_refund_no"` // 商户退款单号
+	TotalFee    int64  `xml:"total_fee"`     // 订单金额（分）
+	RefundFee   int64  `xml:"refund_fee"`    // 退款金额（分）
 }

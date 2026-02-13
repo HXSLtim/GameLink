@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"gamelink/internal/repository/common"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
-	"gamelink/internal/repository/common"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"

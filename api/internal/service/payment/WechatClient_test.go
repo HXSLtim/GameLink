@@ -44,12 +44,12 @@ func TestWeChatClient_GenerateSign(t *testing.T) {
 	)
 
 	params := map[string]string{
-		"appid":      "wx1234567890",
-		"mch_id":     "1234567890",
-		"nonce_str":  "test_nonce",
-		"body":       "测试商品",
+		"appid":        "wx1234567890",
+		"mch_id":       "1234567890",
+		"nonce_str":    "test_nonce",
+		"body":         "测试商品",
 		"out_trade_no": "ORDER123",
-		"total_fee":  "100",
+		"total_fee":    "100",
 	}
 
 	sign := client.GenerateSign(params)
@@ -83,21 +83,21 @@ func TestWeChatClient_GenerateSign_Sorted(t *testing.T) {
 
 	// 相同参数，不同顺序
 	params1 := map[string]string{
-		"appid":      "wx1234567890",
-		"mch_id":     "1234567890",
-		"nonce_str":  "test_nonce",
-		"body":       "测试商品",
+		"appid":        "wx1234567890",
+		"mch_id":       "1234567890",
+		"nonce_str":    "test_nonce",
+		"body":         "测试商品",
 		"out_trade_no": "ORDER123",
-		"total_fee":  "100",
+		"total_fee":    "100",
 	}
 
 	params2 := map[string]string{
-		"total_fee":     "100",
-		"appid":         "wx1234567890",
-		"out_trade_no":  "ORDER123",
-		"nonce_str":     "test_nonce",
-		"mch_id":        "1234567890",
-		"body":          "测试商品",
+		"total_fee":    "100",
+		"appid":        "wx1234567890",
+		"out_trade_no": "ORDER123",
+		"nonce_str":    "test_nonce",
+		"mch_id":       "1234567890",
+		"body":         "测试商品",
 	}
 
 	sign1 := client.GenerateSign(params1)
@@ -118,12 +118,12 @@ func TestWeChatClient_VerifySign(t *testing.T) {
 	)
 
 	params := map[string]string{
-		"appid":      "wx1234567890",
-		"mch_id":     "1234567890",
-		"nonce_str":  "test_nonce",
-		"body":       "测试商品",
+		"appid":        "wx1234567890",
+		"mch_id":       "1234567890",
+		"nonce_str":    "test_nonce",
+		"body":         "测试商品",
 		"out_trade_no": "ORDER123",
-		"total_fee":  "100",
+		"total_fee":    "100",
 	}
 
 	// 生成签名
@@ -168,15 +168,15 @@ func TestWeChatClient_BuildUnifiedOrderParams(t *testing.T) {
 
 	// 验证必需参数
 	requiredFields := map[string]string{
-		"appid":     "wx_test_app_id",
-		"mch_id":    "test_mch_id",
-		"body":      "测试商品",
-		"out_trade_no": "ORDER123",
-		"total_fee": "100",
+		"appid":            "wx_test_app_id",
+		"mch_id":           "test_mch_id",
+		"body":             "测试商品",
+		"out_trade_no":     "ORDER123",
+		"total_fee":        "100",
 		"spbill_create_ip": "127.0.0.1",
-		"notify_url": "https://example.com/notify",
-		"trade_type": "JSAPI",
-		"openid":     "test_openid",
+		"notify_url":       "https://example.com/notify",
+		"trade_type":       "JSAPI",
+		"openid":           "test_openid",
 	}
 
 	for key, expectedValue := range requiredFields {
@@ -236,9 +236,9 @@ func TestWeChatClient_BuildOrderQueryParams(t *testing.T) {
 
 	// 验证必需参数
 	requiredFields := map[string]string{
-		"appid":         "wx_test_app_id",
-		"mch_id":        "test_mch_id",
-		"out_trade_no":  "ORDER123",
+		"appid":          "wx_test_app_id",
+		"mch_id":         "test_mch_id",
+		"out_trade_no":   "ORDER123",
 		"transaction_id": "WX_TRANSACTION",
 	}
 

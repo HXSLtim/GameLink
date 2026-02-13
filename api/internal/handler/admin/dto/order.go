@@ -10,22 +10,22 @@ import (
 
 // OrderResponse 订单响应 DTO
 type OrderResponse struct {
-	ID              uint64            `json:"id"`
-	OrderNo         string            `json:"orderNo"`
-	UserID          uint64            `json:"userId"`
-	PlayerID        *uint64           `json:"playerId,omitempty"`
-	ItemID          uint64            `json:"itemId"`
-	GameID          *uint64           `json:"gameId,omitempty"`
-	Status          model.OrderStatus `json:"status"`
-	Title           string            `json:"title,omitempty"`
-	Description     string            `json:"description,omitempty"`
+	ID          uint64            `json:"id"`
+	OrderNo     string            `json:"orderNo"`
+	UserID      uint64            `json:"userId"`
+	PlayerID    *uint64           `json:"playerId,omitempty"`
+	ItemID      uint64            `json:"itemId"`
+	GameID      *uint64           `json:"gameId,omitempty"`
+	Status      model.OrderStatus `json:"status"`
+	Title       string            `json:"title,omitempty"`
+	Description string            `json:"description,omitempty"`
 
 	// 价格
-	Quantity          int    `json:"quantity"`
-	UnitPriceCents    int64  `json:"unitPriceCents"`
-	TotalPriceCents   int64  `json:"totalPriceCents"`
-	CommissionCents   int64  `json:"commissionCents"`
-	PlayerIncomeCents int64  `json:"playerIncomeCents"`
+	Quantity          int   `json:"quantity"`
+	UnitPriceCents    int64 `json:"unitPriceCents"`
+	TotalPriceCents   int64 `json:"totalPriceCents"`
+	CommissionCents   int64 `json:"commissionCents"`
+	PlayerIncomeCents int64 `json:"playerIncomeCents"`
 
 	// 时间
 	ScheduledStart *time.Time `json:"scheduledStart,omitempty"`

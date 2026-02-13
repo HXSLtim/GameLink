@@ -136,8 +136,8 @@ func TestMaskSensitiveData(t *testing.T) {
 			name:          "short phone unchanged",
 			phone:         "1380",
 			email:         "a@b.com",
-			expectedPhone: "1380",     // too short to mask
-			expectedEmail: "a@b.com",  // username too short
+			expectedPhone: "1380",    // too short to mask
+			expectedEmail: "a@b.com", // username too short
 		},
 		{
 			name:          "empty fields",

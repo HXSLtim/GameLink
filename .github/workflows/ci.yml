@@ -20,7 +20,7 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
-  GO_VERSION: '1.25.5'
+  GO_VERSION: '1.25.7'
 
 jobs:
   # 变更检测
@@ -275,7 +275,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: app
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       # CRITICAL: Type check failures block the build
       - name: Type check
@@ -304,7 +304,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: app
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build
         working-directory: app

@@ -14,7 +14,7 @@
 # =============================================================================
 # Stage 1: Builder
 # =============================================================================
-FROM golang:1.25.5-alpine AS builder
+FROM golang:1.25.7-alpine AS builder
 
 # 元数据
 LABEL maintainer="GameLink Team <support@gamelink.com>" \

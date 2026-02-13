@@ -173,18 +173,18 @@ func TestWeChatAPIClient_UnifiedOrder(t *testing.T) {
 func (c *WeChatAPIClient) unifiedOrderWithServer(serverURL string, req UnifiedOrderRequest) (*UnifiedOrderResponse, error) {
 	// 构建请求参数
 	type XMLParams struct {
-		XMLName         xml.Name `xml:"xml"`
-		AppID           string   `xml:"appid"`
-		MchID           string   `xml:"mch_id"`
-		NonceStr        string   `xml:"nonce_str"`
-		Body            string   `xml:"body"`
-		OutTradeNo      string   `xml:"out_trade_no"`
-		TotalFee        string   `xml:"total_fee"`
-		SpbillCreateIP  string   `xml:"spbill_create_ip"`
-		NotifyURL       string   `xml:"notify_url"`
-		TradeType       string   `xml:"trade_type"`
-		OpenID          string   `xml:"openid,omitempty"`
-		Sign            string   `xml:"sign"`
+		XMLName        xml.Name `xml:"xml"`
+		AppID          string   `xml:"appid"`
+		MchID          string   `xml:"mch_id"`
+		NonceStr       string   `xml:"nonce_str"`
+		Body           string   `xml:"body"`
+		OutTradeNo     string   `xml:"out_trade_no"`
+		TotalFee       string   `xml:"total_fee"`
+		SpbillCreateIP string   `xml:"spbill_create_ip"`
+		NotifyURL      string   `xml:"notify_url"`
+		TradeType      string   `xml:"trade_type"`
+		OpenID         string   `xml:"openid,omitempty"`
+		Sign           string   `xml:"sign"`
 	}
 
 	// 生成签名
@@ -206,17 +206,17 @@ func (c *WeChatAPIClient) unifiedOrderWithServer(serverURL string, req UnifiedOr
 	sign := signClient.GenerateSign(params)
 
 	xmlParams := XMLParams{
-		AppID:           c.appID,
-		MchID:           c.mchID,
-		NonceStr:        req.NonceStr,
-		Body:            req.Body,
-		OutTradeNo:      req.OutTradeNo,
-		TotalFee:        "100",
-		SpbillCreateIP:  req.SpbillCreateIP,
-		NotifyURL:       c.notifyURL,
-		TradeType:       req.TradeType,
-		OpenID:          req.OpenID,
-		Sign:            sign,
+		AppID:          c.appID,
+		MchID:          c.mchID,
+		NonceStr:       req.NonceStr,
+		Body:           req.Body,
+		OutTradeNo:     req.OutTradeNo,
+		TotalFee:       "100",
+		SpbillCreateIP: req.SpbillCreateIP,
+		NotifyURL:      c.notifyURL,
+		TradeType:      req.TradeType,
+		OpenID:         req.OpenID,
+		Sign:           sign,
 	}
 
 	xmlData, err := xml.Marshal(xmlParams)
@@ -327,9 +327,9 @@ func (c *WeChatAPIClient) orderQueryWithServer(serverURL, outTradeNo, transactio
 	nonceStr := generateNonceStr()
 	signClient := NewWeChatClient(c.appID, c.mchID, c.apiKey, c.notifyURL)
 	params := map[string]string{
-		"appid":       c.appID,
-		"mch_id":      c.mchID,
-		"nonce_str":   nonceStr,
+		"appid":        c.appID,
+		"mch_id":       c.mchID,
+		"nonce_str":    nonceStr,
 		"out_trade_no": outTradeNo,
 	}
 	if transactionID != "" {
@@ -453,15 +453,15 @@ func TestWeChatAPIClient_Refund(t *testing.T) {
 // refundWithServer 使用指定服务器 URL 的测试辅助方法
 func (c *WeChatAPIClient) refundWithServer(serverURL string, req RefundRequest) (*RefundResponse, error) {
 	type XMLParams struct {
-		XMLName      xml.Name `xml:"xml"`
-		AppID        string   `xml:"appid"`
-		MchID        string   `xml:"mch_id"`
-		NonceStr     string   `xml:"nonce_str"`
-		OutTradeNo   string   `xml:"out_trade_no"`
-		OutRefundNo  string   `xml:"out_refund_no"`
-		TotalFee     string   `xml:"total_fee"`
-		RefundFee    string   `xml:"refund_fee"`
-		Sign         string   `xml:"sign"`
+		XMLName     xml.Name `xml:"xml"`
+		AppID       string   `xml:"appid"`
+		MchID       string   `xml:"mch_id"`
+		NonceStr    string   `xml:"nonce_str"`
+		OutTradeNo  string   `xml:"out_trade_no"`
+		OutRefundNo string   `xml:"out_refund_no"`
+		TotalFee    string   `xml:"total_fee"`
+		RefundFee   string   `xml:"refund_fee"`
+		Sign        string   `xml:"sign"`
 	}
 
 	signClient := NewWeChatClient(c.appID, c.mchID, c.apiKey, c.notifyURL)

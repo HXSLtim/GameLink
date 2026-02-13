@@ -12,11 +12,11 @@ import (
 
 func seedPlayerServices(tx *gorm.DB, players map[string]*model.Player, games map[string]*model.Game) error {
 	type serviceSpec struct {
-		PlayerKey    string
-		GameKey      string
-		RankLevel    int
-		Description  string
-		IsActive     bool
+		PlayerKey   string
+		GameKey     string
+		RankLevel   int
+		Description string
+		IsActive    bool
 	}
 
 	specs := []serviceSpec{
@@ -80,10 +80,10 @@ func seedPlayerServices(tx *gorm.DB, players map[string]*model.Player, games map
 
 func seedPlayerSchedules(tx *gorm.DB, players map[string]*model.Player) error {
 	type scheduleSpec struct {
-		PlayerKey        string
-		WeeklySchedule   map[string]interface{}
-		AutoOffline      bool
-		MaxOrdersPerDay  int
+		PlayerKey       string
+		WeeklySchedule  map[string]interface{}
+		AutoOffline     bool
+		MaxOrdersPerDay int
 	}
 
 	fullDay := []interface{}{[]string{"00:00", "23:59"}}
@@ -170,8 +170,8 @@ func seedPlayerSchedules(tx *gorm.DB, players map[string]*model.Player) error {
 		err = tx.Where("player_id = ?", player.ID).First(&existing).Error
 		if err == nil {
 			updates := map[string]interface{}{
-				"weekly_schedule":   string(b),
-				"auto_offline":      spec.AutoOffline,
+				"weekly_schedule":    string(b),
+				"auto_offline":       spec.AutoOffline,
 				"max_orders_per_day": spec.MaxOrdersPerDay,
 			}
 			if err := tx.Model(&model.PlayerSchedule{}).Where("id = ?", existing.ID).Updates(updates).Error; err != nil {

@@ -187,4 +187,3 @@ func seedRankingRewards(tx *gorm.DB) error {
 
 	return nil
 }
-

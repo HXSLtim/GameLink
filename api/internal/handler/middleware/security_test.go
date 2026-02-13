@@ -183,7 +183,7 @@ func TestCORS_DevelopmentDefaults(t *testing.T) {
 
 			allowHeader := w.Header().Get("Access-Control-Allow-Origin")
 			if tt.shouldAllow {
-			assert.Equal(t, tt.origin, allowHeader, "Should allow all origins in development (wildcard)")
+				assert.Equal(t, tt.origin, allowHeader, "Should allow all origins in development (wildcard)")
 			} else {
 				assert.Empty(t, allowHeader, "Should not allow external sites in development")
 			}

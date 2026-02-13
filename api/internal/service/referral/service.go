@@ -279,14 +279,14 @@ func (s *Service) CreateReferral(ctx context.Context, req CreateReferralRequest)
 	rewardType, rewardAmount := s.resolveRewardConfig(ctx, req.Type)
 
 	referral := &model.Referral{
-		ReferrerID:       req.ReferrerID,
-		RefereeID:        req.RefereeID,
-		CodeID:           req.CodeID,
-		Type:             req.Type,
-		Level:            level,
-		Status:           model.ReferralStatusPending,
-		RefereeCondition: req.RefereeCondition,
-		RewardType:       rewardType,
+		ReferrerID:        req.ReferrerID,
+		RefereeID:         req.RefereeID,
+		CodeID:            req.CodeID,
+		Type:              req.Type,
+		Level:             level,
+		Status:            model.ReferralStatusPending,
+		RefereeCondition:  req.RefereeCondition,
+		RewardType:        rewardType,
 		RewardAmountCents: rewardAmount,
 	}
 

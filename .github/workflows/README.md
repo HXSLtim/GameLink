@@ -219,7 +219,7 @@ Workflows use the following environment variables:
 
 ```yaml
 NODE_VERSION: '20'
-GO_VERSION: '1.25.5'
+GO_VERSION: '1.25.7'
 REGISTRY: ghcr.io
 ```
 

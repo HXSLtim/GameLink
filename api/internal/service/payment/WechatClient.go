@@ -97,9 +97,9 @@ func (c *WeChatClient) BuildUnifiedOrderParams(orderID, body, clientIP, tradeTyp
 // BuildOrderQueryParams 构建订单查询参数
 func (c *WeChatClient) BuildOrderQueryParams(outTradeNo, transactionID string) map[string]string {
 	params := map[string]string{
-		"appid":      c.appID,
-		"mch_id":     c.mchID,
-		"nonce_str":  generateNonceStr(),
+		"appid":        c.appID,
+		"mch_id":       c.mchID,
+		"nonce_str":    generateNonceStr(),
 		"out_trade_no": outTradeNo,
 	}
 

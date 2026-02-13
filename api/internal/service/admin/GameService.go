@@ -1,9 +1,9 @@
-﻿package admin
+package admin
 
 import (
 	"context"
 	"strings"
-	
+
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/pkg/apierr"
@@ -184,4 +184,3 @@ func (s *AdminService) BatchUpdateGamesSortOrder(ctx context.Context, updates ma
 	}
 	return updated, nil
 }
-

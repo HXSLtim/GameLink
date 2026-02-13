@@ -81,7 +81,7 @@ func SyncAPIPermissions(router *gin.Engine, db *gorm.DB, cfg APISyncConfig) erro
 	// 使用 GORM Clauses 批量 upsert。
 	// 关键：以 method+path 作为冲突键，避免历史上“同 method+path 不同 code”导致的唯一索引冲突。
 	err = db.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "method"}, {Name: "path"}},
+		Columns:   []clause.Column{{Name: "method"}, {Name: "path"}},
 		DoUpdates: clause.AssignmentColumns([]string{"code", "group", "description", "updated_at"}),
 	}).CreateInBatches(permissions, 100).Error
 	if err != nil {

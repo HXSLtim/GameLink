@@ -84,4 +84,3 @@ func TestUserRepository_Create_PhoneOnly_NoUniqueConflictOnEmptyEmail(t *testing
 		t.Fatalf("create user2 failed: %v", err)
 	}
 }
-

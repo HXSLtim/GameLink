@@ -1,15 +1,15 @@
-﻿package admin
+package admin
 
 import (
 	"context"
 	"errors"
 	"strings"
 	"time"
-	
+
 	"log/slog"
-	
+
 	"golang.org/x/crypto/bcrypt"
-	
+
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/pkg/logging"
@@ -442,4 +442,3 @@ func mapUserError(err error) error {
 	}
 	return WrapError(err, "操作用户数据失败")
 }
-

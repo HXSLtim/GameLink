@@ -13,11 +13,11 @@ import (
 
 func seedReviewExtensions(tx *gorm.DB, users map[string]*model.User, players map[string]*model.Player, orders map[string]*model.Order) error {
 	type replySpec struct {
-		OrderKey string
+		OrderKey  string
 		PlayerKey string
-		Content string
-		Status model.ReviewReplyStatus
-		Offset time.Duration
+		Content   string
+		Status    model.ReviewReplyStatus
+		Offset    time.Duration
 	}
 	replies := []replySpec{
 		{OrderKey: "orderCompleted1", PlayerKey: "playerA", Content: "感谢认可，下次继续为您服务。", Status: model.ReviewReplyStatusApproved, Offset: -18 * time.Hour},
@@ -78,11 +78,11 @@ func seedReviewExtensions(tx *gorm.DB, users map[string]*model.User, players map
 	}
 
 	type appealSpec struct {
-		OrderKey string
+		OrderKey  string
 		PlayerKey string
-		Reason string
-		Status model.AppealStatus
-		Remark string
+		Reason    string
+		Status    model.AppealStatus
+		Remark    string
 	}
 	appeals := []appealSpec{
 		{OrderKey: "orderRefunded1", PlayerKey: "playerB", Reason: "该评价与实际服务过程不符，申请复核。", Status: model.AppealStatusPending, Remark: ""},
@@ -123,12 +123,12 @@ func seedReviewExtensions(tx *gorm.DB, users map[string]*model.User, players map
 		evidence := `["https://cdn.gamelink.com/evidence/review-appeal-1.png"]`
 		if err == nil {
 			updates := map[string]interface{}{
-				"reason":         spec.Reason,
-				"status":         spec.Status,
-				"evidence_urls":  evidence,
-				"handle_remark":  spec.Remark,
-				"handled_by":     handlerID,
-				"handled_at":     ptrTime(time.Now().Add(-4 * time.Hour)),
+				"reason":        spec.Reason,
+				"status":        spec.Status,
+				"evidence_urls": evidence,
+				"handle_remark": spec.Remark,
+				"handled_by":    handlerID,
+				"handled_at":    ptrTime(time.Now().Add(-4 * time.Hour)),
 			}
 			if spec.Status == model.AppealStatusPending {
 				updates["handled_by"] = nil
@@ -143,12 +143,12 @@ func seedReviewExtensions(tx *gorm.DB, users map[string]*model.User, players map
 			return err
 		}
 		appeal := &model.ReviewAppeal{
-			ReviewID:      review.ID,
-			PlayerID:      player.ID,
-			Reason:        spec.Reason,
-			EvidenceURLs:  evidence,
-			Status:        spec.Status,
-			HandleRemark:  spec.Remark,
+			ReviewID:     review.ID,
+			PlayerID:     player.ID,
+			Reason:       spec.Reason,
+			EvidenceURLs: evidence,
+			Status:       spec.Status,
+			HandleRemark: spec.Remark,
 		}
 		if spec.Status != model.AppealStatusPending {
 			appeal.HandledBy = handlerID
@@ -202,11 +202,11 @@ func seedChatSnapshots(tx *gorm.DB, orders map[string]*model.Order) error {
 
 func seedUserSettings(tx *gorm.DB, users map[string]*model.User) error {
 	type settingSpec struct {
-		UserKey string
-		Theme string
-		Language string
+		UserKey       string
+		Theme         string
+		Language      string
 		Notifications map[string]interface{}
-		Privacy map[string]interface{}
+		Privacy       map[string]interface{}
 	}
 	specs := []settingSpec{
 		{UserKey: "customerA", Theme: "auto", Language: "zh-CN", Notifications: map[string]interface{}{"order": true, "promo": true, "system": true}, Privacy: map[string]interface{}{"hideOnline": false}},
@@ -261,12 +261,12 @@ func seedPaymentRoutingExtensions(tx *gorm.DB, users map[string]*model.User, ord
 	defaultEntity := entities[0]
 
 	type channelSpec struct {
-		EntityID uint64
-		Channel model.PaymentMethod
+		EntityID   uint64
+		Channel    model.PaymentMethod
 		MerchantNo string
-		Enabled bool
-		Priority int
-		Remark string
+		Enabled    bool
+		Priority   int
+		Remark     string
 	}
 	channelSpecs := []channelSpec{
 		{EntityID: defaultEntity.ID, Channel: model.PaymentMethodWeChat, MerchantNo: "wx_mch_10001", Enabled: true, Priority: 1, Remark: "微信主商户"},
@@ -278,10 +278,10 @@ func seedPaymentRoutingExtensions(tx *gorm.DB, users map[string]*model.User, ord
 		err := tx.Where("collection_entity_id = ? AND channel = ?", spec.EntityID, spec.Channel).First(&existing).Error
 		if err == nil {
 			if err := tx.Model(&model.PaymentChannelConfig{}).Where("id = ?", existing.ID).Updates(map[string]interface{}{
-				"merchant_no": spec.MerchantNo,
-				"enabled":     spec.Enabled,
-				"priority":    spec.Priority,
-				"remark":      spec.Remark,
+				"merchant_no":  spec.MerchantNo,
+				"enabled":      spec.Enabled,
+				"priority":     spec.Priority,
+				"remark":       spec.Remark,
 				"callback_url": "https://api.gamelink.com/payment/callback",
 			}).Error; err != nil {
 				return err
@@ -293,13 +293,13 @@ func seedPaymentRoutingExtensions(tx *gorm.DB, users map[string]*model.User, ord
 		}
 		row := &model.PaymentChannelConfig{
 			CollectionEntityID: spec.EntityID,
-			Channel: spec.Channel,
-			MerchantNo: spec.MerchantNo,
-			MerchantKey: "seed-demo-key",
-			CallbackURL: "https://api.gamelink.com/payment/callback",
-			Enabled: spec.Enabled,
-			Priority: spec.Priority,
-			Remark: spec.Remark,
+			Channel:            spec.Channel,
+			MerchantNo:         spec.MerchantNo,
+			MerchantKey:        "seed-demo-key",
+			CallbackURL:        "https://api.gamelink.com/payment/callback",
+			Enabled:            spec.Enabled,
+			Priority:           spec.Priority,
+			Remark:             spec.Remark,
 		}
 		if err := tx.Create(row).Error; err != nil {
 			return err
@@ -311,12 +311,12 @@ func seedPaymentRoutingExtensions(tx *gorm.DB, users map[string]*model.User, ord
 		return b
 	}
 	ruleSpecs := []struct {
-		Name string
-		Priority int
-		Conditions json.RawMessage
+		Name           string
+		Priority       int
+		Conditions     json.RawMessage
 		TargetEntityID uint64
-		Status model.RuleStatus
-		Description string
+		Status         model.RuleStatus
+		Description    string
 	}{
 		{Name: "大额订单分流", Priority: 10, Conditions: makeCond(model.ConditionFieldOrderAmount, model.ConditionOperatorGreaterThan, 50000), TargetEntityID: defaultEntity.ID, Status: model.RuleStatusActive, Description: "金额大于500元优先走主主体"},
 		{Name: "MOBA 游戏分流", Priority: 20, Conditions: makeCond(model.ConditionFieldGameType, model.ConditionOperatorIn, []string{"moba"}), TargetEntityID: defaultEntity.ID, Status: model.RuleStatusActive, Description: "MOBA订单专项分流"},
@@ -352,10 +352,10 @@ func seedPaymentRoutingExtensions(tx *gorm.DB, users map[string]*model.User, ord
 		if hCount == 0 {
 			h := &model.RoutingRuleHistory{
 				RoutingRuleID: existing.ID,
-				FieldName: "status",
-				OldValue: "draft",
-				NewValue: string(existing.Status),
-				ChangedBy: creatorID,
+				FieldName:     "status",
+				OldValue:      "draft",
+				NewValue:      string(existing.Status),
+				ChangedBy:     creatorID,
 			}
 			if err := tx.Create(h).Error; err != nil {
 				return err
@@ -380,14 +380,14 @@ func seedPaymentRoutingExtensions(tx *gorm.DB, users map[string]*model.User, ord
 			isFallback := i%3 == 0
 			detail := fmt.Sprintf(`{"seed":"demo","rule":"%d","seq":%d}`, matchedID, i+1)
 			logRow := &model.RoutingLog{
-				PaymentID: p.ID,
-				OrderID: p.OrderID,
-				MatchedRuleID: &matchedID,
+				PaymentID:          p.ID,
+				OrderID:            p.OrderID,
+				MatchedRuleID:      &matchedID,
 				CollectionEntityID: defaultEntity.ID,
-				MerchantNo: "wx_mch_10001",
-				IsDefault: false,
-				IsFallback: isFallback,
-				MatchDetails: detail,
+				MerchantNo:         "wx_mch_10001",
+				IsDefault:          false,
+				IsFallback:         isFallback,
+				MatchDetails:       detail,
 			}
 			if err := tx.Create(logRow).Error; err != nil {
 				return err

@@ -1,10 +1,10 @@
-﻿package admin
+package admin
 
 import (
 	"context"
 	"strings"
 	"time"
-	
+
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/pkg/apierr"
@@ -232,4 +232,3 @@ func validatePlayerInput(userID uint64, verification model.VerificationStatus) e
 	}
 	return nil
 }
-

@@ -1,4 +1,4 @@
-﻿package admin
+package admin
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	
+
 	"log/slog"
-	
+
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/common"
@@ -100,7 +100,6 @@ func (s *AdminService) DeleteReview(ctx context.Context, id uint64) error {
 	err := s.tx.WithTx(ctx, func(r *common.Repos) error { return r.Reviews.Delete(ctx, id) })
 	return WrapError(err, "delete review")
 }
-
 
 // ReviewReportDTO 举报信息DTO
 type ReviewReportDTO struct {
@@ -807,4 +806,3 @@ func (s *AdminService) DeleteReviewReply(ctx context.Context, userID, replyID ui
 		return nil
 	})
 }
-

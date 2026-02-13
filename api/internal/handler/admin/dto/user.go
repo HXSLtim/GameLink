@@ -33,8 +33,8 @@ type UpdateUserRequest struct {
 // UserResponse 用户响应 DTO（不暴露敏感字段）
 type UserResponse struct {
 	ID        uint64           `json:"id"`
-	Phone     string           `json:"phone,omitempty"`      // 脱敏处理可在转换时做
-	Email     string           `json:"email,omitempty"`      // 脱敏处理可在转换时做
+	Phone     string           `json:"phone,omitempty"` // 脱敏处理可在转换时做
+	Email     string           `json:"email,omitempty"` // 脱敏处理可在转换时做
 	Name      string           `json:"name"`
 	Nickname  string           `json:"nickname,omitempty"`
 	AvatarURL string           `json:"avatarUrl,omitempty"`
@@ -42,12 +42,12 @@ type UserResponse struct {
 	Status    model.UserStatus `json:"status"`
 	CreatedAt time.Time        `json:"createdAt"`
 	UpdatedAt time.Time        `json:"updatedAt"`
-	
+
 	// VIP 信息（可选）
 	VipLevel    *VipLevelBrief `json:"vipLevel,omitempty"`
 	VipUnlocked bool           `json:"vipUnlocked"`
 	VipExpireAt *time.Time     `json:"vipExpireAt,omitempty"`
-	
+
 	// 最后登录
 	LastLoginAt *time.Time `json:"lastLoginAt,omitempty"`
 }
@@ -76,7 +76,7 @@ func ToUserResponse(user *model.User) *UserResponse {
 	if user == nil {
 		return nil
 	}
-	
+
 	resp := &UserResponse{
 		ID:          user.ID,
 		Phone:       user.Phone,
@@ -92,7 +92,7 @@ func ToUserResponse(user *model.User) *UserResponse {
 		VipExpireAt: user.VipExpireAt,
 		LastLoginAt: user.LastLoginAt,
 	}
-	
+
 	// 转换 VIP 等级信息
 	if user.VipLevel != nil {
 		resp.VipLevel = &VipLevelBrief{
@@ -102,7 +102,7 @@ func ToUserResponse(user *model.User) *UserResponse {
 			SortOrder: user.VipLevel.SortOrder,
 		}
 	}
-	
+
 	return resp
 }
 
@@ -123,7 +123,7 @@ func (r *UserResponse) MaskSensitiveData() {
 	if len(r.Phone) >= 11 {
 		r.Phone = r.Phone[:3] + "****" + r.Phone[len(r.Phone)-4:]
 	}
-	
+
 	// 邮箱脱敏: te****@example.com
 	if len(r.Email) > 0 {
 		parts := splitEmail(r.Email)

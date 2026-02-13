@@ -10,39 +10,39 @@ import (
 
 // WeChatCallbackNotification 微信支付回调通知
 type WeChatCallbackNotification struct {
-	XMLName        xml.Name `xml:"xml"`
-	ReturnCode     string   `xml:"return_code"`      // SUCCESS/FAIL
-	ReturnMsg      string   `xml:"return_msg"`       // 返回信息
-	AppID          string   `xml:"appid"`            // 微信分配的公众账号ID
-	MchID          string   `xml:"mch_id"`           // 微信支付分配的商户号
-	DeviceInfo     string   `xml:"device_info"`      // 微信支付分配的终端设备号
-	NonceStr       string   `xml:"nonce_str"`        // 随机字符串
-	Sign           string   `xml:"sign"`             // 签名
-	ResultCode     string   `xml:"result_code"`      // SUCCESS/FAIL
-	ErrCode        string   `xml:"err_code"`         // 错误代码
-	ErrCodeDes     string   `xml:"err_code_des"`     // 错误代码描述
-	OpenID         string   `xml:"openid"`           // 用户在商户appid下的唯一标识
-	IsSubscribe    string   `xml:"is_subscribe"`     // 是否关注公众账号
-	TradeType      string   `xml:"trade_type"`       // 交易类型: JSAPI, NATIVE, APP
-	BankType       string   `xml:"bank_type"`        // 银行类型
-	TotalFee       string   `xml:"total_fee"`        // 订单总金额，单位为分
-	SettlementTotalFee string `xml:"settlement_total_fee"` // 应结订单金额=订单金额-非充值代金券金额，单位为分
-	FeeType        string   `xml:"fee_type"`         // 货币类型
-	CashFee        string   `xml:"cash_fee"`         // 现金支付金额
-	CashFeeType    string   `xml:"cash_fee_type"`    // 现金支付货币类型
-	CouponFee      string   `xml:"coupon_fee"`       // 代金券金额=订单金额-现金支付金额
-	CouponCount    string   `xml:"coupon_count"`     // 代金券使用数量
-	TransactionID  string   `xml:"transaction_id"`   // 微信支付订单号
-	OutTradeNo     string   `xml:"out_trade_no"`     // 商户订单号
-	Attach         string   `xml:"attach"`           // 附加数据，原样返回
-	TimeEnd        string   `xml:"time_end"`         // 支付完成时间
+	XMLName            xml.Name `xml:"xml"`
+	ReturnCode         string   `xml:"return_code"`          // SUCCESS/FAIL
+	ReturnMsg          string   `xml:"return_msg"`           // 返回信息
+	AppID              string   `xml:"appid"`                // 微信分配的公众账号ID
+	MchID              string   `xml:"mch_id"`               // 微信支付分配的商户号
+	DeviceInfo         string   `xml:"device_info"`          // 微信支付分配的终端设备号
+	NonceStr           string   `xml:"nonce_str"`            // 随机字符串
+	Sign               string   `xml:"sign"`                 // 签名
+	ResultCode         string   `xml:"result_code"`          // SUCCESS/FAIL
+	ErrCode            string   `xml:"err_code"`             // 错误代码
+	ErrCodeDes         string   `xml:"err_code_des"`         // 错误代码描述
+	OpenID             string   `xml:"openid"`               // 用户在商户appid下的唯一标识
+	IsSubscribe        string   `xml:"is_subscribe"`         // 是否关注公众账号
+	TradeType          string   `xml:"trade_type"`           // 交易类型: JSAPI, NATIVE, APP
+	BankType           string   `xml:"bank_type"`            // 银行类型
+	TotalFee           string   `xml:"total_fee"`            // 订单总金额，单位为分
+	SettlementTotalFee string   `xml:"settlement_total_fee"` // 应结订单金额=订单金额-非充值代金券金额，单位为分
+	FeeType            string   `xml:"fee_type"`             // 货币类型
+	CashFee            string   `xml:"cash_fee"`             // 现金支付金额
+	CashFeeType        string   `xml:"cash_fee_type"`        // 现金支付货币类型
+	CouponFee          string   `xml:"coupon_fee"`           // 代金券金额=订单金额-现金支付金额
+	CouponCount        string   `xml:"coupon_count"`         // 代金券使用数量
+	TransactionID      string   `xml:"transaction_id"`       // 微信支付订单号
+	OutTradeNo         string   `xml:"out_trade_no"`         // 商户订单号
+	Attach             string   `xml:"attach"`               // 附加数据，原样返回
+	TimeEnd            string   `xml:"time_end"`             // 支付完成时间
 }
 
 // WeChatCallbackResponse 微信支付回调响应
 type WeChatCallbackResponse struct {
-	XMLName   xml.Name `xml:"xml"`
-	ReturnCode string  `xml:"return_code"`
-	ReturnMsg  string  `xml:"return_msg"`
+	XMLName    xml.Name `xml:"xml"`
+	ReturnCode string   `xml:"return_code"`
+	ReturnMsg  string   `xml:"return_msg"`
 }
 
 // NewWeChatCallbackResponse 创建成功回调响应
@@ -68,19 +68,19 @@ func (r *WeChatCallbackResponse) ToXML() ([]byte, error) {
 
 // WeChatCallbackHandler 微信支付回调处理器
 type WeChatCallbackHandler struct {
-	appID      string
-	mchID      string
-	apiKey     string
+	appID       string
+	mchID       string
+	apiKey      string
 	replayCache map[string]int64 // 防重放缓存
 }
 
 // NewWeChatCallbackHandler 创建微信支付回调处理器
 func NewWeChatCallbackHandler(appID, mchID, apiKey string) *WeChatCallbackHandler {
 	return &WeChatCallbackHandler{
-		appID:        appID,
-		mchID:        mchID,
-		apiKey:       apiKey,
-		replayCache:  make(map[string]int64),
+		appID:       appID,
+		mchID:       mchID,
+		apiKey:      apiKey,
+		replayCache: make(map[string]int64),
 	}
 }
 
