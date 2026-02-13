@@ -110,14 +110,14 @@ func TestPlayerService_CRUD(t *testing.T) {
 	createResp := testutil.MakeRequest(t, ctx.Router, http.MethodPost, "/player/services", createPayload)
 	testutil.AssertSuccess(t, createResp)
 
-	var createBody model.APIResponse[model.PlayerService]
+	var createBody model.APIResponse[playerServiceDTO]
 	require.NoError(t, json.Unmarshal(createResp.Body.Bytes(), &createBody))
 	serviceID := createBody.Data.ID
 	assert.NotZero(t, serviceID)
 
 	listResp := testutil.MakeRequest(t, ctx.Router, http.MethodGet, "/player/services", nil)
 	testutil.AssertSuccess(t, listResp)
-	var listBody model.APIResponse[[]model.PlayerService]
+	var listBody model.APIResponse[[]playerServiceDTO]
 	require.NoError(t, json.Unmarshal(listResp.Body.Bytes(), &listBody))
 	assert.Len(t, listBody.Data, 1)
 
