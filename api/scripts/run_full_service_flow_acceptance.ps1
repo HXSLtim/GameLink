@@ -274,6 +274,7 @@ $commonArgs = @{
 }
 
 Invoke-SubScript -Stage "OrderFlow" -ScriptName "run_flow_guard_regression.ps1" -Arguments $commonArgs
+Invoke-SubScript -Stage "NotificationFlow" -ScriptName "run_order_accept_notification_regression.ps1" -Arguments $commonArgs
 
 $csArgs = @{
   BaseUrl          = $BaseUrl
@@ -290,6 +291,7 @@ $csArgs = @{
 }
 Invoke-SubScript -Stage "DisputeFlow" -ScriptName "run_cs_permission_regression.ps1" -Arguments $csArgs
 
+Invoke-SubScript -Stage "RefundFlow" -ScriptName "run_partial_refund_regression.ps1" -Arguments $commonArgs
 Invoke-SubScript -Stage "WithdrawFlow" -ScriptName "run_withdraw_flow_regression.ps1" -Arguments $commonArgs
 Invoke-SubScript -Stage "Integrity" -ScriptName "run_data_integrity.ps1" -Arguments @{
   Container = $PostgresContainer
