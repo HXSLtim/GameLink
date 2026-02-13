@@ -194,7 +194,8 @@ func (s *BusinessScheduler) checkCouponExpire(ctx context.Context) {
 
 		// 标记已通知
 		s.db.WithContext(ctx).Exec(`
-			UPDATE coupons SET ext_json = JSON_SET(COALESCE(ext_json, '{}'), '$.expire_notified', true)
+			UPDATE coupons
+			SET ext_json = jsonb_set(COALESCE(ext_json, '{}'::jsonb), '{expire_notified}', 'true'::jsonb, true)
 			WHERE id = ?
 		`, coupon.ID)
 	}
@@ -222,14 +223,19 @@ func (s *BusinessScheduler) checkDisputeSLA(ctx context.Context) {
 	threshold30min := now.Add(-30 * time.Minute)
 	result := s.db.WithContext(ctx).Exec(`
 		UPDATE order_disputes 
-		SET priority = 'high',
-		    ext_json = JSON_SET(COALESCE(ext_json, '{}'), '$.sla_escalated_at', ?),
+		SET sla_breached = true,
+		    sla_breached_at = COALESCE(sla_breached_at, ?),
+		    ext_json = jsonb_set(
+		        jsonb_set(COALESCE(ext_json, '{}'::jsonb), '{sla_escalated_at}', to_jsonb(CAST(? AS text)), true),
+		        '{sla_level}',
+		        to_jsonb('high'::text),
+		        true
+		    ),
 		    updated_at = NOW()
 		WHERE status = 'pending'
-		  AND priority != 'high'
 		  AND created_at < ?
-		  AND (ext_json IS NULL OR ext_json NOT LIKE '%sla_escalated_at%')
-	`, now.Format(time.RFC3339), threshold30min)
+		  AND (sla_breached = false OR sla_breached_at IS NULL)
+	`, now, now.Format(time.RFC3339), threshold30min)
 
 	if result.Error != nil {
 		s.logger.Error("Failed to escalate disputes (30min)", "error", result.Error)
@@ -241,13 +247,18 @@ func (s *BusinessScheduler) checkDisputeSLA(ctx context.Context) {
 	threshold2h := now.Add(-2 * time.Hour)
 	result = s.db.WithContext(ctx).Exec(`
 		UPDATE order_disputes 
-		SET priority = 'urgent',
-		    ext_json = JSON_SET(COALESCE(ext_json, '{}'), '$.sla_urgent_at', ?),
+		SET sla_breached = true,
+		    sla_breached_at = COALESCE(sla_breached_at, ?),
+		    ext_json = jsonb_set(
+		        jsonb_set(COALESCE(ext_json, '{}'::jsonb), '{sla_urgent_at}', to_jsonb(CAST(? AS text)), true),
+		        '{sla_level}',
+		        to_jsonb('urgent'::text),
+		        true
+		    ),
 		    updated_at = NOW()
 		WHERE status = 'pending'
-		  AND priority != 'urgent'
 		  AND created_at < ?
-	`, now.Format(time.RFC3339), threshold2h)
+	`, now, now.Format(time.RFC3339), threshold2h)
 
 	if result.Error != nil {
 		s.logger.Error("Failed to escalate disputes (2h)", "error", result.Error)
@@ -299,7 +310,6 @@ func (s *BusinessScheduler) issueVipMonthlyCouponsWithLock() {
 // issueVipMonthlyCoupons 发放 VIP 月度优惠券
 func (s *BusinessScheduler) issueVipMonthlyCoupons(ctx context.Context) {
 	now := time.Now()
-	currentMonth := now.Format("2006-01")
 
 	// 查找需要发放月度券的 VIP 用户
 	// 条件：有 VIP 等级 + 未过期 + 本月未发放过
@@ -318,9 +328,12 @@ func (s *BusinessScheduler) issueVipMonthlyCoupons(ctx context.Context) {
 		  AND (u.vip_expire_at IS NULL OR u.vip_expire_at > ?)
 		  AND v.monthly_coupon_template_id IS NOT NULL
 		  AND v.monthly_coupon_count > 0
-		  AND (u.last_monthly_coupon_at IS NULL OR DATE_FORMAT(u.last_monthly_coupon_at, '%Y-%m') < ?)
+		  AND (
+		      u.last_monthly_coupon_at IS NULL
+		      OR date_trunc('month', u.last_monthly_coupon_at) < date_trunc('month', CAST(? AS timestamptz))
+		  )
 		LIMIT 500
-	`, now, currentMonth).Scan(&usersToIssue).Error
+	`, now, now).Scan(&usersToIssue).Error
 
 	if err != nil {
 		s.logger.Error("Failed to query VIP users for monthly coupons", "error", err)
