@@ -10,6 +10,7 @@ export * from './auth'
 
 // 聊天相关
 export * from './chat'
+export * from './customerService'
 
 // 通知相关
 export * from './notification'

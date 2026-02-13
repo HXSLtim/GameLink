@@ -165,6 +165,7 @@ function Invoke-SmokeChecks {
     @{ Name = "public/players/:id/services"; Method = "GET"; Path = "/public/players/$playerID/services"; Token = "" },
     @{ Name = "user/settings"; Method = "GET"; Path = "/user/settings"; Token = $user.Token },
     @{ Name = "user/notification-settings"; Method = "GET"; Path = "/user/notification-settings"; Token = $user.Token },
+    @{ Name = "user/customer-service/session"; Method = "GET"; Path = "/user/customer-service/session"; Token = $user.Token },
     @{ Name = "player/orders (compat)"; Method = "GET"; Path = "/player/orders?page=1&page_size=10"; Token = $player.Token },
     @{ Name = "player/certification/identity"; Method = "GET"; Path = "/player/certification/identity"; Token = $player.Token },
     @{ Name = "users/me (legacy)"; Method = "GET"; Path = "/users/me"; Token = $admin.Token },
@@ -286,6 +287,7 @@ $commonArgs = @{
 
 Invoke-SubScript -Stage "OrderFlow" -ScriptName "run_flow_guard_regression.ps1" -Arguments $commonArgs
 Invoke-SubScript -Stage "NotificationFlow" -ScriptName "run_order_accept_notification_regression.ps1" -Arguments $commonArgs
+Invoke-SubScript -Stage "CustomerServiceFlow" -ScriptName "run_customer_service_flow_regression.ps1" -Arguments $commonArgs
 
 $csArgs = @{
   BaseUrl          = $BaseUrl
