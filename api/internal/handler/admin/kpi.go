@@ -30,6 +30,18 @@ type KPIQueryParams struct {
 	Compare   string `form:"compare"`
 }
 
+type kpiTargetDTO struct {
+	ID          uint64  `json:"id"`
+	PeriodType  string  `json:"periodType"`
+	MetricName  string  `json:"metricName"`
+	TargetValue float64 `json:"targetValue"`
+	StartDate   string  `json:"startDate"`
+	EndDate     string  `json:"endDate"`
+	CreatedBy   uint64  `json:"createdBy"`
+	CreatedAt   string  `json:"createdAt"`
+	UpdatedAt   string  `json:"updatedAt"`
+}
+
 // parseKPIQueryParams parses KPI query parameters.
 func parseKPIQueryParams(c *gin.Context) kpiservice.QueryParams {
 	var qp KPIQueryParams
@@ -155,7 +167,7 @@ func (h *KPIHandler) GetTrend(c *gin.Context) {
 // @Param        period_type  query  string  false  "周期类型" Enums(daily,weekly,monthly)
 // @Param        metric_name  query  string  false  "指标名称"
 // @Produce      json
-// @Success      200  {array}   model.KPITarget
+// @Success      200  {array}   kpiTargetDTO
 // @Router       /admin/kpi/targets [get]
 func (h *KPIHandler) GetTargets(c *gin.Context) {
 	periodType := c.Query("period_type")
@@ -171,11 +183,16 @@ func (h *KPIHandler) GetTargets(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.APIResponse[[]model.KPITarget]{
+	items := make([]kpiTargetDTO, 0, len(targets))
+	for i := range targets {
+		items = append(items, toKPITargetDTO(&targets[i]))
+	}
+
+	c.JSON(http.StatusOK, model.APIResponse[[]kpiTargetDTO]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data:    targets,
+		Data:    items,
 	})
 }
 
@@ -196,7 +213,7 @@ type CreateTargetPayload struct {
 // @Accept       json
 // @Param        request  body  CreateTargetPayload  true  "目标配置"
 // @Produce      json
-// @Success      201  {object}  model.KPITarget
+// @Success      201  {object}  kpiTargetDTO
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/kpi/targets [post]
 func (h *KPIHandler) CreateTarget(c *gin.Context) {
@@ -260,11 +277,11 @@ func (h *KPIHandler) CreateTarget(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, model.APIResponse[*model.KPITarget]{
+	c.JSON(http.StatusCreated, model.APIResponse[kpiTargetDTO]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "OK",
-		Data:    target,
+		Data:    toKPITargetDTO(target),
 	})
 }
 
@@ -385,4 +402,21 @@ func (h *KPIHandler) DeleteTarget(c *gin.Context) {
 		Code:    http.StatusOK,
 		Message: "OK",
 	})
+}
+
+func toKPITargetDTO(target *model.KPITarget) kpiTargetDTO {
+	if target == nil {
+		return kpiTargetDTO{}
+	}
+	return kpiTargetDTO{
+		ID:          target.ID,
+		PeriodType:  target.PeriodType,
+		MetricName:  target.MetricName,
+		TargetValue: target.TargetValue,
+		StartDate:   target.StartDate.Format("2006-01-02"),
+		EndDate:     target.EndDate.Format("2006-01-02"),
+		CreatedBy:   target.CreatedBy,
+		CreatedAt:   target.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:   target.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
 }
