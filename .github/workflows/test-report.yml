@@ -33,11 +33,11 @@ jobs:
           name: admin-coverage
           path: coverage/
 
-      - name: Download client coverage
+      - name: Download app coverage
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: client-coverage
+          name: app-coverage
           path: coverage/
 
       - name: Generate coverage report
@@ -72,11 +72,11 @@ jobs:
           fi
           echo "" >> coverage-report.md
 
-          # Client coverage
-          echo "## Client (TypeScript)" >> coverage-report.md
-          if [ -f coverage/client/coverage-summary.json ]; then
+          # App coverage
+          echo "## App (TypeScript)" >> coverage-report.md
+          if [ -f coverage/app/coverage-summary.json ]; then
             echo '```json' >> coverage-report.md
-            cat coverage/client/coverage-summary.json >> coverage-report.md
+            cat coverage/app/coverage-summary.json >> coverage-report.md
             echo '```' >> coverage-report.md
           else
             echo "No coverage data available" >> coverage-report.md
@@ -229,16 +229,16 @@ jobs:
             echo "| Admin | ℹ️ Skipped | No scan data |" >> security-report.md
           fi
 
-          # npm audit (client)
-          if [ -f security/npm-client.txt ]; then
-            VULNS=$(grep -c "vulnerabilities" security/npm-client.txt || echo "0")
-            if [ "$VULNS" == "0" ] || grep -q "found 0 vulnerabilities" security/npm-client.txt; then
-              echo "| Client | ✅ Pass | No vulnerabilities found |" >> security-report.md
+          # npm audit (app)
+          if [ -f security/npm-app.txt ]; then
+            VULNS=$(grep -c "vulnerabilities" security/npm-app.txt || echo "0")
+            if [ "$VULNS" == "0" ] || grep -q "found 0 vulnerabilities" security/npm-app.txt; then
+              echo "| App | ✅ Pass | No vulnerabilities found |" >> security-report.md
             else
-              echo "| Client | ⚠️ Warning | Vulnerabilities found |" >> security-report.md
+              echo "| App | ⚠️ Warning | Vulnerabilities found |" >> security-report.md
             fi
           else
-            echo "| Client | ℹ️ Skipped | No scan data |" >> security-report.md
+            echo "| App | ℹ️ Skipped | No scan data |" >> security-report.md
           fi
 
           # trivy

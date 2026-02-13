@@ -30,7 +30,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       admin: ${{ steps.filter.outputs.admin }}
-      client: ${{ steps.filter.outputs.client }}
+      app: ${{ steps.filter.outputs.app }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -42,8 +42,8 @@ jobs:
               - 'docker-compose*.yml'
             admin:
               - 'admin/**'
-            client:
-              - 'client/**'
+            app:
+              - 'app/**'
 
   # 后端测试
   backend-test:
@@ -252,15 +252,15 @@ jobs:
           path: admin/dist
           retention-days: 7
 
-  # Client 端测试
-  # NOTE: Client CI is handled here in the main workflow to avoid duplicate execution.
-  # Do NOT create a separate client-ci.yml - it would run simultaneously with this workflow
-  # on client/** changes, wasting CI resources and creating race conditions.
-  client-test:
-    name: Client Tests
+  # App 端测试
+  # NOTE: App CI is handled here in the main workflow to avoid duplicate execution.
+  # Do NOT create a separate app-ci.yml - it would run simultaneously with this workflow
+  # on app/** changes, wasting CI resources and creating race conditions.
+  app-test:
+    name: App Tests
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.client == 'true' || github.event_name == 'push'
+    if: needs.changes.outputs.app == 'true' || github.event_name == 'push'
 
     steps:
       - name: Checkout code
@@ -271,33 +271,25 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: client/package-lock.json
+          cache-dependency-path: app/package-lock.json
 
       - name: Install dependencies
-        working-directory: client
+        working-directory: app
         run: npm ci
 
       # CRITICAL: Type check failures block the build
       - name: Type check
-        working-directory: client
-        run: npx tsc --noEmit
+        working-directory: app
+        run: npm run type-check
 
-      # CRITICAL: Code quality gate - linter failures block the build
-      - name: Run linter
-        working-directory: client
-        run: npm run lint
+      # NOTE: app 当前无统一 lint/test 命令，先以 type-check 作为 CI 质量门禁
 
-      # CRITICAL: Code quality gate - test failures block the build
-      - name: Run tests
-        working-directory: client
-        run: npm run test:run || npm test -- --run
-
-  # Client 端构建
-  client-build:
-    name: Client Build
+  # App 端构建
+  app-build:
+    name: App Build
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.client == 'true' || github.event_name == 'push'
+    if: needs.changes.outputs.app == 'true' || github.event_name == 'push'
 
     steps:
       - name: Checkout code
@@ -308,38 +300,38 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: client/package-lock.json
+          cache-dependency-path: app/package-lock.json
 
       - name: Install dependencies
-        working-directory: client
+        working-directory: app
         run: npm ci
 
       - name: Build
-        working-directory: client
+        working-directory: app
         env:
           VITE_API_BASE_URL: /api/v1
           VITE_CRYPTO_ENABLED: 'false'
-        run: npm run build
+        run: npm run build:h5
 
       - name: Check bundle size
-        working-directory: client
+        working-directory: app
         run: |
           echo "Bundle size:"
-          du -sh dist/
-          du -sh dist/assets/ || true
+          du -sh dist/ || true
+          du -sh dist/build/h5/ || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: client-dist
-          path: client/dist
+          name: app-dist
+          path: app/dist
           retention-days: 7
 
   # Docker 镜像构建
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [backend-test, backend-build, admin-test, admin-build, client-test, client-build]
+    needs: [backend-test, backend-build, admin-test, admin-build, app-test, app-build]
     if: |
       always() &&
       github.event_name == 'push' &&
@@ -373,20 +365,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build client image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./client
-          push: false
-          tags: gamelink-client:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   # CI 状态汇总
   ci-status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [backend-test, backend-build, admin-test, admin-build, client-test, client-build]
+    needs: [backend-test, backend-build, admin-test, admin-build, app-test, app-build]
     if: always()
     steps:
       - name: Check CI Status
@@ -396,8 +379,8 @@ jobs:
           echo "Backend Build: ${{ needs.backend-build.result }}"
           echo "Admin Test: ${{ needs.admin-test.result }}"
           echo "Admin Build: ${{ needs.admin-build.result }}"
-          echo "Client Test: ${{ needs.client-test.result }}"
-          echo "Client Build: ${{ needs.client-build.result }}"
+          echo "App Test: ${{ needs.app-test.result }}"
+          echo "App Build: ${{ needs.app-build.result }}"
           echo ""
 
           # Helper function: Check if result is acceptable (success or skipped)
@@ -430,14 +413,14 @@ jobs:
           echo "=== Checking Test Results ==="
           check_result "Backend Test" "${{ needs.backend-test.result }}" || FAILED=1
           check_result "Admin Test" "${{ needs.admin-test.result }}" || FAILED=1
-          check_result "Client Test" "${{ needs.client-test.result }}" || FAILED=1
+          check_result "App Test" "${{ needs.app-test.result }}" || FAILED=1
 
           # Check build results
           echo ""
           echo "=== Checking Build Results ==="
           check_result "Backend Build" "${{ needs.backend-build.result }}" || FAILED=1
           check_result "Admin Build" "${{ needs.admin-build.result }}" || FAILED=1
-          check_result "Client Build" "${{ needs.client-build.result }}" || FAILED=1
+          check_result "App Build" "${{ needs.app-build.result }}" || FAILED=1
 
           echo ""
           if [[ "$FAILED" == "1" ]]; then

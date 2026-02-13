@@ -33,7 +33,7 @@ This directory contains CI/CD workflows for the GameLink project.
 
 **Features:**
 - Change detection to skip unnecessary builds
-- Parallel testing for backend, admin, and client
+- Parallel testing for backend, admin, and app
 - Code coverage enforcement (70% threshold)
 - Linter checks (golangci-lint, ESLint)
 - Type checking (TypeScript)
@@ -42,7 +42,7 @@ This directory contains CI/CD workflows for the GameLink project.
 **Quality Gates:**
 - Backend: 70% test coverage required
 - Admin: Type check + linter + tests
-- Client: Type check + linter + tests
+- App: Type check
 
 ### Performance Workflow (`performance.yml`)
 
@@ -143,7 +143,7 @@ This directory contains CI/CD workflows for the GameLink project.
 **Report Sections:**
 - Backend (Go) coverage
 - Admin Panel (TypeScript) coverage
-- Client (TypeScript) coverage
+- App (TypeScript) coverage
 - Security scan results
 - Performance benchmarks
 

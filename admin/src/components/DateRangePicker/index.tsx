@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { DatePicker, Space, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
-import { CalendarOutlined, DownOutlined } from '@ant-design/icons';
+import { DownOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 import styles from './index.module.css';

@@ -246,7 +246,11 @@ const stats = computed<HeaderStatItem[]>(() => [
   color: rgba(255, 255, 255, 0.8);
   margin-bottom: var(--spacing-md);
   line-height: 1.5;
-  @include text-ellipsis-2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .hero-stats {

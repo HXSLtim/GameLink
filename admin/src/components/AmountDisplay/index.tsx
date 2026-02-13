@@ -3,7 +3,7 @@
  * 支持分转元、货币符号、格式化等功能
  */
 import React from 'react';
-import { Typography, Tooltip, Space } from 'antd';
+import { Typography, Tooltip } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined, MinusOutlined } from '@ant-design/icons';
 import styles from './index.module.css';
 

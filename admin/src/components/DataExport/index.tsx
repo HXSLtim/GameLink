@@ -20,7 +20,6 @@ import {
   FileTextOutlined,
   FilePdfOutlined,
   LoadingOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import styles from './index.module.css';
 
