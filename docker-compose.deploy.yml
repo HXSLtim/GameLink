@@ -1,0 +1,176 @@
+# GameLink 最小部署 Docker Compose 配置
+# 使用方式: docker-compose -f docker-compose.deploy.yml --env-file .env.deploy up -d
+#
+# 包含全部服务: PostgreSQL + Redis + Backend + Admin
+# 适用于单机部署、演示环境、小型生产环境
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: gamelink-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: gamelink-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+        --requirepass ${REDIS_PASSWORD}
+        --appendonly yes
+        --appendfsync everysec
+        --maxmemory 256mb
+        --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端 API 服务
+  backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        GOPROXY: https://goproxy.cn,direct
+    container_name: gamelink-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      # 应用配置
+      - APP_ENV=${APP_ENV:-production}
+      - SERVICE_PORT=8080
+      - GIN_MODE=${GIN_MODE:-release}
+      # 数据库配置
+      - DB_DSN=host=postgres port=5432 user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable
+      - DB_MAX_CONNS=${DB_MAX_CONNS:-25}
+      - DB_MAX_IDLE=${DB_MAX_IDLE:-5}
+      # Redis配置
+      - CACHE_TYPE=redis
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB:-0}
+      # JWT配置
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_TOKEN_TTL_HOURS=${JWT_TOKEN_TTL_HOURS:-24}
+      # 加密配置
+      - CRYPTO_ENABLED=${CRYPTO_ENABLED}
+      - CRYPTO_SECRET_KEY=${CRYPTO_SECRET_KEY}
+      - CRYPTO_IV=${CRYPTO_IV}
+      - CRYPTO_USE_SIGNATURE=${CRYPTO_USE_SIGNATURE}
+      # 超级管理员配置
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      - SUPER_ADMIN_NAME=${SUPER_ADMIN_NAME:-Super Admin}
+      # 种子数据
+      - SEED_ENABLED=${SEED_ENABLED}
+      # OSS配置
+      - OSS_PROVIDER=${OSS_PROVIDER}
+      - OSS_ENDPOINT=${OSS_ENDPOINT}
+      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY}
+      - OSS_SECRET_KEY=${OSS_SECRET_KEY}
+      - OSS_BUCKET=${OSS_BUCKET}
+      - OSS_REGION=${OSS_REGION}
+      - OSS_ENABLED=${OSS_ENABLED}
+      - OSS_SIGNED_URL_TTL_SECONDS=${OSS_SIGNED_URL_TTL_SECONDS:-3600}
+      # 支付配置
+      - WECHAT_PAY_ENABLED=${WECHAT_PAY_ENABLED}
+      - WECHAT_PAY_APP_ID=${WECHAT_PAY_APP_ID}
+      - WECHAT_PAY_MCH_ID=${WECHAT_PAY_MCH_ID}
+      - WECHAT_PAY_API_KEY=${WECHAT_PAY_API_KEY}
+      - WECHAT_PAY_CERT_PATH=/app/certs/wechat/apiclient_cert.p12
+      - WECHAT_PAY_KEY_PATH=/app/certs/wechat/apiclient_key.pem
+      - WECHAT_PAY_CERT_SERIAL_NO=${WECHAT_PAY_CERT_SERIAL_NO}
+      - WECHAT_PAY_NOTIFY_URL=${WECHAT_PAY_NOTIFY_URL}
+      - ALIPAY_ENABLED=${ALIPAY_ENABLED}
+      - ALIPAY_APP_ID=${ALIPAY_APP_ID}
+      - ALIPAY_GATEWAY=${ALIPAY_GATEWAY}
+      - ALIPAY_PRIVATE_KEY_PATH=/app/certs/alipay/app_private_key.pem
+      - ALIPAY_PUBLIC_KEY_PATH=/app/certs/alipay/alipay_public_key.pem
+      - ALIPAY_NOTIFY_URL=${ALIPAY_NOTIFY_URL}
+      # 短信配置
+      - SMS_PROVIDER=${SMS_PROVIDER}
+      - SMS_ACCESS_KEY=${SMS_ACCESS_KEY}
+      - SMS_SECRET_KEY=${SMS_SECRET_KEY}
+      - SMS_SIGN_NAME=${SMS_SIGN_NAME}
+      - SMS_ENABLED=${SMS_ENABLED}
+    volumes:
+      - ./api/configs:/app/configs:ro
+      - backend_data:/app/var
+      - backend_logs:/app/logs
+    networks:
+      - gamelink-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # 管理后台前端
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        NPM_REGISTRY: https://registry.npmmirror.com
+    container_name: gamelink-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  gamelink-network:
+    driver: bridge
+    name: gamelink-network
+
+volumes:
+  postgres_data:
+    name: gamelink-postgres-data
+  redis_data:
+    name: gamelink-redis-data
+  backend_data:
+    name: gamelink-backend-data
+  backend_logs:
+    name: gamelink-backend-logs
