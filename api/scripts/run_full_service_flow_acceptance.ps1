@@ -12,7 +12,8 @@ param(
   [string]$CSAgentPassword = "CsAgent@123",
   [string]$PostgresContainer = "gamelink-postgres",
   [string]$DBUser = "gamelink",
-  [string]$DBName = "gamelink"
+  [string]$DBName = "gamelink",
+  [switch]$EnableCompatChecks
 )
 
 $ErrorActionPreference = "Stop"
@@ -168,8 +169,18 @@ function Invoke-SmokeChecks {
     @{ Name = "player/certification/identity"; Method = "GET"; Path = "/player/certification/identity"; Token = $player.Token },
     @{ Name = "users/me (legacy)"; Method = "GET"; Path = "/users/me"; Token = $admin.Token },
     @{ Name = "users/chat/groups (legacy)"; Method = "GET"; Path = "/users/chat/groups?page=1&page_size=10"; Token = $admin.Token },
-    @{ Name = "user/chat/groups"; Method = "GET"; Path = "/user/chat/groups?page=1&page_size=10"; Token = $admin.Token }
+    @{ Name = "user/chat/groups"; Method = "GET"; Path = "/user/chat/groups?page=1&page_size=10"; Token = $admin.Token },
+    @{ Name = "admin/stats/dashboard"; Method = "GET"; Path = "/admin/stats/dashboard"; Token = $admin.Token }
   )
+
+  if ($EnableCompatChecks) {
+    $checks += @(
+      @{ Name = "admin/stats (compat)"; Method = "GET"; Path = "/admin/stats"; Token = $admin.Token },
+      @{ Name = "admin/dashboard/stats (compat)"; Method = "GET"; Path = "/admin/dashboard/stats"; Token = $admin.Token },
+      @{ Name = "admin/user-behavior (compat)"; Method = "GET"; Path = "/admin/user-behavior"; Token = $admin.Token },
+      @{ Name = "admin/user-distribution (compat)"; Method = "GET"; Path = "/admin/user-distribution"; Token = $admin.Token }
+    )
+  }
 
   foreach ($item in $checks) {
     $resp = Invoke-Api -Method $item.Method -Path $item.Path -Token $item.Token

@@ -309,6 +309,8 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  adminservice.UserBehaviorStatsResponse
 		// @Router       /admin/users/behavior/stats [get]
 		group.GET("/users/behavior/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/stats"), userBehaviorHandler.GetBehaviorStats)
+		group.GET("/user-behavior", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/stats"), userBehaviorHandler.GetBehaviorStats)
+		group.GET("/user-behavior/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/stats"), userBehaviorHandler.GetBehaviorStats)
 		// @Summary      获取用户活动趋势
 		// @Description  获取最近N天的用户活动趋势数据
 		// @Tags         Admin/UserBehavior
@@ -326,6 +328,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  adminservice.UserDistributionResponse
 		// @Router       /admin/users/behavior/distribution [get]
 		group.GET("/users/behavior/distribution", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/distribution"), userBehaviorHandler.GetUserDistribution)
+		group.GET("/user-distribution", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/distribution"), userBehaviorHandler.GetUserDistribution)
 
 		// 陪玩师管- 使用细粒度权		// @Summary      列出玩家资料
 		// @Tags         Admin/Players
@@ -1157,6 +1160,8 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 	// @Success      200            {object}  stats.DashboardData
 	// @Router       /admin/stats/dashboard [get]
 	group.GET("/stats/dashboard", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/dashboard"), h.Dashboard)
+	group.GET("/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/dashboard"), h.Dashboard)
+	group.GET("/dashboard/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/dashboard"), h.Dashboard)
 	// @Summary      收入趋势
 	// @Description  获取指定天数的收入趋	// @Tags         Admin - Stats
 	// @Accept       json

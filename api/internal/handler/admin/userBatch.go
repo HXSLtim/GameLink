@@ -24,6 +24,7 @@ func RegisterBatchRoutes(rg *gin.RouterGroup, batchService *user.BatchOperationS
 		batch.POST("/delete", batchDeleteUsersHandler(batchService))
 		batch.POST("/points", batchAddPointsHandler(batchService))
 		batch.POST("/notification", batchSendNotificationHandler(batchService))
+		batch.POST("/notify", batchSendNotificationHandler(batchService))
 	}
 }
 
