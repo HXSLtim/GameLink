@@ -118,7 +118,7 @@ jobs:
           CACHE_TYPE: redis
           JWT_SECRET_KEY: test-secret-key-for-ci-testing-32chars
         run: |
-          go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+          go test -v -race -p 1 -parallel 1 -timeout=30m -coverprofile=coverage.out -covermode=atomic ./...
           go tool cover -func=coverage.out | tail -1
 
       # CRITICAL: Quality gate - coverage below 70% fails the build
