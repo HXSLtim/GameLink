@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"hash/crc32"
 	"log"
 	"strings"
 	"time"
@@ -28,8 +29,14 @@ type APISyncConfig struct {
 func SyncAPIPermissions(router *gin.Engine, db *gorm.DB, cfg APISyncConfig) error {
 	t := time.Now()
 	routes := router.Routes()
+	existingCodeOwners, err := loadPermissionCodeOwners(db)
+	if err != nil {
+		return fmt.Errorf("load existing permission code owners failed: %w", err)
+	}
 
 	var permissions []model.Permission
+	seen := make(map[string]struct{}, len(routes))
+	generatedCodeOwners := make(map[string]string, len(routes))
 	for _, route := range routes {
 		if cfg.GroupFilter != "" && !strings.HasPrefix(route.Path, cfg.GroupFilter) {
 			continue
@@ -38,8 +45,16 @@ func SyncAPIPermissions(router *gin.Engine, db *gorm.DB, cfg APISyncConfig) erro
 			continue
 		}
 
+		key := route.Method + ":" + route.Path
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+
 		group := extractGroup(route.Path)
-		code := generatePermissionCode(route.Method, route.Path)
+		routeKey := buildRouteKey(route.Method, route.Path)
+		code := resolveUniquePermissionCode(route.Method, route.Path, routeKey, existingCodeOwners, generatedCodeOwners)
+		generatedCodeOwners[code] = routeKey
 
 		perm := model.Permission{
 			Method:      model.HTTPMethod(route.Method),
@@ -63,13 +78,14 @@ func SyncAPIPermissions(router *gin.Engine, db *gorm.DB, cfg APISyncConfig) erro
 		return nil
 	}
 
-	// 使用 GORM Clauses 批量 upsert — 按 code 冲突时更新关键字段
-	err := db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "code"}},
-		DoUpdates: clause.AssignmentColumns([]string{"method", "path", "group", "description", "updated_at"}),
+	// 使用 GORM Clauses 批量 upsert。
+	// 关键：以 method+path 作为冲突键，避免历史上“同 method+path 不同 code”导致的唯一索引冲突。
+	err = db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "method"}, {Name: "path"}},
+		DoUpdates: clause.AssignmentColumns([]string{"code", "group", "description", "updated_at"}),
 	}).CreateInBatches(permissions, 100).Error
 	if err != nil {
-		log.Printf("[startup] permission batch upsert error: %v", err)
+		return fmt.Errorf("permission batch upsert failed: %w", err)
 	}
 
 	log.Printf("[startup] synced %d API permissions in %v", len(permissions), time.Since(t))
@@ -173,4 +189,73 @@ func generatePermissionCode(method, path string) string {
 
 	// 组合：resource.action，如 admin.games.list
 	return strings.Join(cleanParts, ".") + "." + action
+}
+
+func buildRouteKey(method, path string) string {
+	return strings.ToUpper(method) + ":" + path
+}
+
+func resolveUniquePermissionCode(
+	method, path, routeKey string,
+	existingCodeOwners map[string]string,
+	generatedCodeOwners map[string]string,
+) string {
+	base := generatePermissionCode(method, path)
+	if base == "" {
+		base = "api.permission"
+	}
+
+	if isPermissionCodeAvailable(base, routeKey, existingCodeOwners, generatedCodeOwners) {
+		return base
+	}
+
+	suffix := fmt.Sprintf("%08x", crc32.ChecksumIEEE([]byte(routeKey)))
+	candidate := base + "." + suffix
+	if isPermissionCodeAvailable(candidate, routeKey, existingCodeOwners, generatedCodeOwners) {
+		return candidate
+	}
+
+	// 理论上极少命中，作为最终保险。
+	for index := 1; ; index++ {
+		candidate = fmt.Sprintf("%s.%s.%d", base, suffix, index)
+		if isPermissionCodeAvailable(candidate, routeKey, existingCodeOwners, generatedCodeOwners) {
+			return candidate
+		}
+	}
+}
+
+func isPermissionCodeAvailable(
+	code, routeKey string,
+	existingCodeOwners map[string]string,
+	generatedCodeOwners map[string]string,
+) bool {
+	if owner, exists := existingCodeOwners[code]; exists && owner != routeKey {
+		return false
+	}
+	if owner, exists := generatedCodeOwners[code]; exists && owner != routeKey {
+		return false
+	}
+	return true
+}
+
+func loadPermissionCodeOwners(db *gorm.DB) (map[string]string, error) {
+	type permissionCodeOwner struct {
+		Code   string
+		Method string
+		Path   string
+	}
+
+	var rows []permissionCodeOwner
+	if err := db.Model(&model.Permission{}).
+		Select("code, method, path").
+		Where("code <> ''").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	owners := make(map[string]string, len(rows))
+	for _, row := range rows {
+		owners[row.Code] = buildRouteKey(row.Method, row.Path)
+	}
+	return owners, nil
 }
