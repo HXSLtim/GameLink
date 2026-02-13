@@ -16,6 +16,43 @@ import (
 // ChatMessage 聊天消息模型（类型别名）
 type ChatMessage = model.ChatMessage
 
+type chatGroupSummaryResponse struct {
+	ID             uint64                `json:"id"`
+	GroupType      model.ChatGroupType   `json:"groupType"`
+	Type           model.ChatGroupType   `json:"type"`
+	Name           string                `json:"name"`
+	GroupName      string                `json:"groupName"`
+	Avatar         string                `json:"avatar,omitempty"`
+	AvatarURL      string                `json:"avatarUrl,omitempty"`
+	Description    string                `json:"description,omitempty"`
+	OrderID        *uint64               `json:"orderId,omitempty"`
+	RelatedOrderID *uint64               `json:"relatedOrderId,omitempty"`
+	MemberCount    int                   `json:"memberCount"`
+	UnreadCount    int                   `json:"unreadCount"`
+	TargetUserID   *uint64               `json:"targetUserId,omitempty"`
+	TargetNickname string                `json:"targetNickname,omitempty"`
+	TargetIsOnline bool                  `json:"targetIsOnline"`
+	LastMessage    *chatMessageItem      `json:"lastMessage,omitempty"`
+	CreatedAt      string                `json:"createdAt"`
+	UpdatedAt      string                `json:"updatedAt"`
+	IsActive       bool                  `json:"isActive"`
+	RoomStatus     model.ChatGroupStatus `json:"roomStatus"`
+}
+
+type chatMessageItem struct {
+	ID             uint64                `json:"id"`
+	GroupID        uint64                `json:"groupId"`
+	SenderID       uint64                `json:"senderId"`
+	SenderNickname string                `json:"senderNickname,omitempty"`
+	SenderAvatar   string                `json:"senderAvatar,omitempty"`
+	MessageType    model.ChatMessageType `json:"messageType"`
+	Content        string                `json:"content"`
+	ImageURL       string                `json:"imageUrl,omitempty"`
+	Status         string                `json:"status"`
+	OrderID        *uint64               `json:"orderId,omitempty"`
+	CreatedAt      string                `json:"createdAt"`
+}
+
 // RegisterChatRoutes 注册用户端聊天相关路由。
 func RegisterChatRoutes(router gin.IRouter, svc *chatservice.ChatService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/chat")
@@ -281,13 +318,18 @@ func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	items := make([]chatGroupSummaryResponse, 0, len(groups))
+	for i := range groups {
+		items = append(items, toChatGroupSummary(&groups[i], userID))
+	}
 
 	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
 		Data: gin.H{
-			"groups": groups,
+			"groups": items,
+			"items":  items,
 			"total":  total,
 		},
 	})
@@ -354,13 +396,19 @@ func listChatMessagesHandler(c *gin.Context, svc *chatservice.ChatService) {
 		}
 		return
 	}
+	groupDetail, _ := svc.GetGroupDetail(c.Request.Context(), groupID)
+	messageItems := make([]chatMessageItem, 0, len(messages))
+	for i := range messages {
+		messageItems = append(messageItems, toChatMessageItem(&messages[i], groupDetail))
+	}
 
 	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
 		Data: gin.H{
-			"messages": messages,
+			"messages": messageItems,
+			"items":    messageItems,
 			"total":    total,
 		},
 	})
@@ -444,11 +492,119 @@ func sendChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 		}
 		return
 	}
+	groupDetail, _ := svc.GetGroupDetail(c.Request.Context(), groupID)
+	item := toChatMessageItem(msg, groupDetail)
 
-	respondJSON[*model.ChatMessage](c, http.StatusCreated, model.APIResponse[*model.ChatMessage]{
+	respondJSON[chatMessageItem](c, http.StatusCreated, model.APIResponse[chatMessageItem]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",
-		Data:    msg,
+		Data:    item,
 	})
+}
+
+func toChatGroupSummary(group *model.ChatGroup, currentUserID uint64) chatGroupSummaryResponse {
+	if group == nil {
+		return chatGroupSummaryResponse{}
+	}
+	name := strings.TrimSpace(group.GroupName)
+	if name == "" {
+		name = "聊天"
+	}
+
+	memberCount := 0
+	var targetUserID *uint64
+	targetNickname := ""
+	for _, member := range group.Members {
+		if member.IsActive {
+			memberCount++
+		}
+		if member.UserID == currentUserID {
+			continue
+		}
+		if targetUserID == nil {
+			id := member.UserID
+			targetUserID = &id
+			targetNickname = strings.TrimSpace(member.Nickname)
+		}
+	}
+
+	if targetNickname == "" && targetUserID != nil {
+		targetNickname = "用户" + strconv.FormatUint(*targetUserID, 10)
+	}
+
+	createdAt := group.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+	updatedAt := group.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")
+
+	return chatGroupSummaryResponse{
+		ID:             group.ID,
+		GroupType:      group.GroupType,
+		Type:           group.GroupType,
+		Name:           name,
+		GroupName:      name,
+		Avatar:         group.AvatarURL,
+		AvatarURL:      group.AvatarURL,
+		Description:    group.Description,
+		OrderID:        group.RelatedOrderID,
+		RelatedOrderID: group.RelatedOrderID,
+		MemberCount:    memberCount,
+		UnreadCount:    0,
+		TargetUserID:   targetUserID,
+		TargetNickname: targetNickname,
+		TargetIsOnline: false,
+		CreatedAt:      createdAt,
+		UpdatedAt:      updatedAt,
+		IsActive:       group.IsActive,
+		RoomStatus:     group.RoomStatus,
+	}
+}
+
+func toChatMessageItem(msg *model.ChatMessage, group *model.ChatGroup) chatMessageItem {
+	if msg == nil {
+		return chatMessageItem{}
+	}
+	content := strings.TrimSpace(msg.Content)
+	if content == "" && msg.ImageURL != "" {
+		content = msg.ImageURL
+	}
+
+	senderNickname := ""
+	if group != nil {
+		for _, member := range group.Members {
+			if member.UserID == msg.SenderID {
+				senderNickname = strings.TrimSpace(member.Nickname)
+				break
+			}
+		}
+	}
+	if senderNickname == "" {
+		senderNickname = "用户" + strconv.FormatUint(msg.SenderID, 10)
+	}
+
+	status := "sent"
+	if msg.IsDeleted {
+		status = "deleted"
+	} else if msg.AuditStatus == model.ChatMessageAuditPending {
+		status = "pending"
+	}
+
+	var orderID *uint64
+	if group != nil && group.RelatedOrderID != nil {
+		id := *group.RelatedOrderID
+		orderID = &id
+	}
+
+	return chatMessageItem{
+		ID:             msg.ID,
+		GroupID:        msg.GroupID,
+		SenderID:       msg.SenderID,
+		SenderNickname: senderNickname,
+		SenderAvatar:   "",
+		MessageType:    msg.MessageType,
+		Content:        content,
+		ImageURL:       msg.ImageURL,
+		Status:         status,
+		OrderID:        orderID,
+		CreatedAt:      msg.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
 }
