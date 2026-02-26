@@ -23,20 +23,20 @@ log_info() {
 
 log_success() {
     echo -e "${GREEN}[✓]${NC} $1"
-    ((PASSED_CHECKS++))
-    ((TOTAL_CHECKS++))
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 }
 
 log_warning() {
     echo -e "${YELLOW}[⚠]${NC} $1"
-    ((WARNING_CHECKS++))
-    ((TOTAL_CHECKS++))
+    WARNING_CHECKS=$((WARNING_CHECKS + 1))
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 }
 
 log_error() {
     echo -e "${RED}[✗]${NC} $1"
-    ((FAILED_CHECKS++))
-    ((TOTAL_CHECKS++))
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 }
 
 show_header() {
