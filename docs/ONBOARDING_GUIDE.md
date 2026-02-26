@@ -40,9 +40,9 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                      客户端层                                │
 │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐   │
-│  │ 小程序/H5    │  │ 管理后台     │  │ 未来: APP       │   │
-│  │ uni-app      │  │ React 19     │  │ uni-app 编译    │   │
-│  │ Vue 3.4 + TS │  │ AntD 6 + TS │  │                 │   │
+│  │ 用户端 Web   │  │ 管理后台     │  │ 未来: APP       │   │
+│  │ React 19     │  │ React 19     │  │ React Native    │   │
+│  │ shadcn+TW    │  │ AntD 6 + TS │  │                 │   │
 │  └──────┬───────┘  └──────┬───────┘  └─────────────────┘   │
 │         │                 │                                  │
 │         └─────────────────┴────────────────┐                │
@@ -70,7 +70,7 @@
 |-----|------|
 | **Backend-Lead** | 后端架构设计、API 开发 |
 | **Frontend-Lead** | 管理后台开发、React 技术栈 |
-| **Mobile-Lead** | 小程序/H5 开发、Vue 技术栈 |
+| **Frontend-Lead (Web)** | 用户端 Web 开发、React 技术栈 |
 | **Database-Architect** | 数据库设计、性能优化 |
 | **DevOps-Engineer** | 部署、CI/CD、运维 |
 | **Product-Manager** | 产品规划、需求分析 |
@@ -108,7 +108,7 @@
    - [ ] 配置环境变量（.env）
    - [ ] 启动后端服务
    - [ ] 启动管理后台
-   - [ ] 启动小程序/H5
+   - [ ] 启动用户端 Web
 
 5. **熟悉项目**（2小时）
    - [ ] 运行后端测试
@@ -120,7 +120,7 @@
 
 - [ ] 后端服务运行在 `http://localhost:8080`
 - [ ] 管理后台运行在 `http://localhost:5173`
-- [ ] H5 应用运行在 `http://localhost:5174`
+- [ ] 用户端 Web 运行在 `http://localhost:5175`
 - [ ] 可以使用超级管理员账号登录管理后台
 
 ---
@@ -149,13 +149,13 @@ GameLink/
 │   │   ├── api/        # API 封装
 │   │   └── router/     # 路由配置
 │   └── package.json
-├── app/                # 小程序/H5（uni-app）
+├── app/                # 用户端 Web（React + shadcn/ui + Tailwind）
 │   ├── src/
-│   │   ├── pages/      # 28 页面
-│   │   ├── components/ # 133 组件
-│   │   ├── composables/# 38 Hook
-│   │   ├── api/        # 14 API 模块
-│   │   └── store/      # Pinia Store
+│   │   ├── features/   # 业务页面
+│   │   ├── components/ # UI 组件
+│   │   ├── hooks/      # 业务 Hook
+│   │   ├── services/   # API 模块
+│   │   └── lib/        # 通用工具
 │   └── package.json
 ├── docs/               # 项目文档
 │   ├── PRD.md
@@ -190,14 +190,15 @@ GameLink/
 | Vite | 5 | 构建工具 |
 | TanStack Query | - | 数据请求 |
 
-#### 小程序/H5
+#### 用户端 Web
 
 | 技术 | 版本 | 用途 |
 |-----|------|------|
-| Vue | 3.4+ | UI 框架 |
-| uni-app | 最新 | 跨平台框架 |
+| React | 19 | UI 框架 |
+| Tailwind CSS | 4.x | 原子化样式系统 |
+| shadcn/ui | latest | UI 组件体系 |
 | TypeScript | 5+ | 类型系统 |
-| Pinia | - | 状态管理 |
+| TanStack Query | latest | 数据请求与缓存 |
 
 ### 3.3 数据库概览
 
@@ -345,7 +346,7 @@ npm run dev
 # 访问 http://localhost:5173
 ```
 
-### 4.6 启动小程序/H5
+### 4.6 启动用户端 Web
 
 ```bash
 cd app
@@ -353,13 +354,9 @@ cd app
 # 安装依赖
 npm install
 
-# H5 开发
-npm run dev:h5
-# 访问 http://localhost:5174
-
-# 微信小程序
-npm run dev:mp-weixin
-# 用微信开发者工具打开 dist/dev/mp-weixin
+# 启动开发服务器
+npm run dev
+# 访问 http://localhost:5175
 ```
 
 ### 4.7 验证安装
@@ -385,11 +382,11 @@ open http://localhost:5173
 密码: Admin123456
 ```
 
-**小程序/H5 验证**
+**用户端 Web 验证**
 
 ```bash
-# 访问 H5
-open http://localhost:5174
+# 访问用户端 Web
+open http://localhost:5175
 
 # 应该能看到首页
 ```
@@ -794,21 +791,17 @@ npm run lint
 npm run format
 ```
 
-#### 小程序/H5
+#### 用户端 Web
 
 ```bash
 # 安装依赖
 npm install
 
-# H5 开发
-npm run dev:h5
+# 启动开发
+npm run dev
 
-# H5 构建
-npm run build:h5
-
-# 微信小程序
-npm run dev:mp-weixin
-npm run build:mp-weixin
+# 构建
+npm run build
 ```
 
 ### 8.3 Docker 常用命令
@@ -908,11 +901,11 @@ A:
 2. 检查 `admin/src/api/client.ts` 中的 API 地址
 3. 打开浏览器控制台查看错误信息
 
-**Q: 小程序/H5 无法访问接口？**
+**Q: 用户端 Web 无法访问接口？**
 
 A:
 1. 检查后端是否启动
-2. 检查 `app/src/api/request.ts` 中的 baseURL
+2. 检查 `app/src/services` 中的 API 配置
 3. 检查跨域配置（后端 CORS 中间件）
 
 #### Docker 问题
@@ -981,8 +974,8 @@ A:
 - [React 官方文档](https://react.dev/)
 - [TypeScript 手册](https://www.typescriptlang.org/docs/)
 - [Ant Design 文档](https://ant.design/components/overview-cn/)
-- [Vue 3 文档](https://cn.vuejs.org/)
-- [uni-app 文档](https://uniapp.dcloud.net.cn/)
+- [Tailwind CSS 文档](https://tailwindcss.com/docs/installation/vite)
+- [shadcn/ui 文档](https://ui.shadcn.com/docs/installation/vite)
 
 #### 数据库相关
 
@@ -998,8 +991,8 @@ A:
 | 项目概览 | `/PROJECT_OVERVIEW.md` | 综合概览 |
 | 产品需求 | `/docs/PRD_COMPREHENSIVE.md` | PRD v2.0 |
 | 项目进度 | `/docs/PROGRESS.md` | 版本历史 |
-| 组件文档 | `/app/docs/COMPONENTS.md` | 小程序组件 |
-| 重构计划 | `/app/docs/REFACTOR_PLAN.md` | 前端重构 |
+| 用户端 Web 实现 | `/app/src` | React + shadcn/ui + Tailwind |
+| 用户端配置 | `/app/components.json` | shadcn 组件配置 |
 
 ### 10.3 推荐学习路径
 
@@ -1041,12 +1034,12 @@ A:
 - 添加小功能
 - 参与代码审查
 
-#### 前端工程师（小程序/H5）
+#### 前端工程师（用户端 Web）
 
 **第1周：环境搭建与熟悉**
 - 安装开发环境
 - 运行项目
-- 熟悉 Vue 3 + uni-app
+- 熟悉 React + shadcn/ui + Tailwind CSS
 - 熟悉项目结构
 
 **第2-3周：核心模块理解**
@@ -1064,7 +1057,6 @@ A:
 
 - [Go 语言中文网](https://studygolang.com/)
 - [React 中文网](https://react.docschina.org/)
-- [Vue 中文网](https://cn.vuejs.org/)
 - [SegmentFault](https://segmentfault.com/)
 - [Stack Overflow](https://stackoverflow.com/)
 

@@ -3,7 +3,7 @@
 > **版本**: v2.0
 > **更新日期**: 2026-02-09
 > **项目类型**: 游戏陪玩社交平台
-> **技术栈**: Go + React + Vue 3 + PostgreSQL + Redis
+> **技术栈**: Go + React + shadcn/ui + Tailwind CSS + PostgreSQL + Redis
 
 ---
 
@@ -49,7 +49,7 @@
 │  数据表      80+ 张                                   │
 │  API 接口    200+ 个                                  │
 │  页面        40+ 个（管理端）                         │
-│              28+ 个（小程序/H5）                       │
+│              用户端 Web（React）                        │
 │  组件        100+ 个                                  │
 │  测试用例    250+ 个                                  │
 └──────────────────────────────────────────────────────┘
@@ -65,9 +65,9 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                      客户端层                                │
 │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐   │
-│  │ 小程序/H5    │  │ 管理后台     │  │ 未来: APP       │   │
-│  │ uni-app      │  │ React 19     │  │ uni-app 编译    │   │
-│  │ Vue 3.4 + TS │  │ AntD 6 + TS │  │                 │   │
+│  │ 用户端 Web   │  │ 管理后台     │  │ 未来: APP       │   │
+│  │ React 19     │  │ React 19     │  │ 待评估技术栈    │   │
+│  │ shadcn + TW  │  │ AntD 6 + TS │  │                 │   │
 │  └──────┬───────┘  └──────┬───────┘  └─────────────────┘   │
 │         │                 │                                  │
 │         └─────────────────┴────────────────┐                │
@@ -131,14 +131,14 @@
 | Vite | 5 | 构建工具 |
 | TanStack Query | - | 数据请求 |
 
-#### 小程序/H5
+#### 用户端 Web
 
 | 技术 | 版本 | 说明 |
 |-----|------|------|
-| uni-app | 最新 | 跨平台框架 |
-| Vue 3 | 3.4+ | UI 框架 |
-| TypeScript | 5+ | 类型系统 |
-| Pinia | - | 状态管理 |
+| React | 19 | UI 框架 |
+| TypeScript | 5.9+ | 类型系统 |
+| shadcn/ui | 最新 | UI 组件方案 |
+| Tailwind CSS | 4.x | 样式系统 |
 
 ### 2.4 部署技术栈
 
@@ -276,7 +276,7 @@ CREATE INDEX idx_chat_messages_group_sent_covering ON chat_messages
 
 ## 4. 功能模块
 
-### 4.1 用户端（小程序/H5）
+### 4.1 用户端（Web）
 
 #### 核心功能
 
@@ -292,30 +292,7 @@ CREATE INDEX idx_chat_messages_group_sent_covering ON chat_messages
 
 #### 页面清单
 
-```
-app/src/pages/
-├── index/                 # 首页
-├── auth/login/            # 登录
-├── auth/register/         # 注册
-├── player/list/           # 陪玩师列表
-├── player/detail/         # 陪玩师详情
-├── game/list/             # 游戏列表
-├── order/create/          # 创建订单
-├── order/list/            # 订单列表
-├── order/detail/          # 订单详情
-├── payment/result/        # 支付结果
-├── message/list/          # 消息列表
-├── message/chat/          # 聊天详情
-├── review/list/           # 评价列表
-├── wallet/index/          # 钱包首页
-├── wallet/recharge/       # 充值
-├── profile/index/         # 个人中心
-├── profile/edit/          # 编辑资料
-├── favorite/list/         # 收藏列表
-├── help/                  # 帮助中心
-├── settings/              # 设置
-└── player/                # 陪玩师端功能
-```
+用户端页面代码位于 `app/src/features/` 与 `app/src/components/`，采用 React Router 进行路由组织。
 
 ### 4.2 陪玩师端
 
@@ -437,19 +414,15 @@ npm run dev
 # 访问 http://localhost:5173
 ```
 
-#### 6. 启动小程序/H5
+#### 6. 启动用户端 Web
 
 ```bash
 cd app
 npm install
 
-# H5 开发
-npm run dev:h5
-# 访问 http://localhost:5174
-
-# 微信小程序
-npm run dev:mp-weixin
-# 用微信开发者工具打开 dist/dev/mp-weixin
+# 启动开发
+npm run dev
+# 访问 http://localhost:5175
 ```
 
 ### 5.3 默认账号
@@ -538,7 +511,7 @@ npm run test
 |-----|------|
 | **Backend-Lead** | 后端架构设计、API 开发 |
 | **Frontend-Lead** | 管理后台开发、React 技术栈 |
-| **Mobile-Lead** | 小程序/H5 开发、Vue 技术栈 |
+| **Frontend-Lead (Web)** | 用户端 Web 开发、React 技术栈 |
 | **Database-Architect** | 数据库设计、性能优化 |
 | **DevOps-Engineer** | 部署、CI/CD、运维 |
 | **Product-Manager** | 产品规划、需求分析 |
@@ -551,8 +524,7 @@ npm run test
 | 产品需求文档 | `/docs/PRD.md` | PRD v1.0 |
 | 完整PRD | `/docs/PRD_COMPREHENSIVE.md` | PRD v2.0（详细版） |
 | 项目进度 | `/docs/PROGRESS.md` | 版本历史 |
-| 小程序组件文档 | `/app/docs/COMPONENTS.md` | 组件职责 |
-| 小程序重构计划 | `/app/docs/REFACTOR_PLAN.md` | 重构记录 |
+| 用户端 Web 实现 | `/app/src` | React + shadcn/ui + Tailwind |
 
 ### 6.3 代码规范
 
@@ -586,9 +558,9 @@ A: 请检查 PostgreSQL 和 Redis 是否已启动，检查 `.env` 中的数据�
 
 A: 确保后端已启动，检查 `admin/src/api` 中的 API 地址配置。
 
-**Q: 小程序/H5 无法访问接口？**
+**Q: 用户端 Web 无法访问接口？**
 
-A: 检查 `app/src/api/request.ts` 中的 baseURL 配置，确保后端已启动并允许跨域。
+A: 检查 `app/src/services` 中的 API 配置，确保后端已启动并允许跨域。
 
 ### B. 性能优化建议
 

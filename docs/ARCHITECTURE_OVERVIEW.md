@@ -23,7 +23,7 @@ GameLink 是一个现代化的游戏陪玩社交平台，连接游戏玩家与�
 |------|---------|------|------|
 | **后端** | Go + Gin + GORM | 1.24.5 | RESTful API + WebSocket |
 | **管理后台** | React + Ant Design + TypeScript | React 19 / AntD 6 | 后台管理系统 |
-| **小程序/H5** | uni-app + Vue 3 + TypeScript | Vue 3.4 | 跨平台前端 |
+| **用户端 Web** | React + shadcn/ui + Tailwind CSS | React 19 | Web 前端 |
 | **数据库** | PostgreSQL | 16+ | 主数据存储 |
 | **缓存** | Redis | 7+ | 会话/热点数据缓存 |
 | **对象存储** | OSS | - | 图片/文件存储 |
@@ -69,18 +69,13 @@ GameLink/
 │       ├── router/              # 路由配置
 │       └── utils/               # 工具函数
 │
-├── app/                          # uni-app 小程序/H5
+├── app/                          # 用户端 Web
 │   └── src/
-│       ├── pages/               # 28 个页面
-│       ├── components/          # 133 个组件
-│       │   ├── gl/              # 基础组件 (gl-* 系列)
-│       │   ├── business/        # 业务组件
-│       │   └── patterns/        # 模式组件
-│       ├── composables/         # 38 个业务 Hook
-│       ├── api/                 # 14 个 API 模块
-│       ├── store/               # 状态管理
-│       ├── styles/              # 主题系统
-│       └── data/                # 静态数据
+│       ├── features/            # 业务功能页面
+│       ├── components/          # 组件（含 shadcn/ui）
+│       ├── hooks/               # 业务 Hook
+│       ├── services/            # API 服务
+│       └── lib/                 # 工具函数
 │
 ├── docs/                         # 项目文档
 ├── scripts/                      # 部署脚本
@@ -193,27 +188,23 @@ GameLink/
 
 ## 前端架构
 
-### uni-app 技术栈
+### 用户端 Web 技术栈
 
 ```
 app/
 ├── src/
-│   ├── pages/              # 28个页面
-│   ├── components/         # 133个组件
-│   │   ├── gl/             # 基础组件（主题封装）
-│   │   ├── business/       # 业务组件（领域特定）
-│   │   └── patterns/       # 模式组件（可复用UI）
-│   ├── composables/        # 38个业务Hook
-│   ├── api/                # 14个API模块
-│   ├── store/              # 3个Store
-│   ├── styles/             # 主题系统（CSS变量）
-│   └── data/               # 静态内容数据
+│   ├── features/           # 页面功能
+│   ├── components/         # 组件（含 shadcn/ui）
+│   ├── hooks/              # 业务 Hook
+│   ├── services/           # API 模块
+│   ├── lib/                # 工具函数
+│   └── index.css           # Tailwind + 主题变量
 ```
 
 #### 组件分层
 
-1. **基础组件 (gl-*系列)**: 主题封装的原子组件
-   - `gl-Button`, `gl-Card`, `gl-Tag`, `gl-Empty` 等
+1. **基础组件 (shadcn/ui)**: 基于 Radix + Tailwind 的原子组件
+   - `Button`, `Input`, `Dialog`, `Sheet` 等
 
 2. **模式组件**: 可复用的UI模式
    - `NavBar`, `SearchBar`, `FilterPanel`, `InfiniteList` 等
@@ -221,9 +212,9 @@ app/
 3. **业务组件**: 领域特定的复合组件
    - `PlayerCard`, `OrderCard`, `ChatMessageBubble`, `WalletBalanceCard` 等
 
-#### Composables 设计
+#### Hooks 设计
 
-38个业务Hook封装核心逻辑：
+业务 Hook 封装核心逻辑：
 - `usePlayerList` - 陪玩师列表
 - `useOrderCreate` - 订单创建
 - `useChatRoom` - 聊天室
@@ -362,14 +353,14 @@ docker compose up -d
 # 手动启动
 cd api && go run main.go          # 后端
 cd admin && npm run dev           # 管理后台
-cd app && npm run dev:mp-weixin   # 小程序
+cd app && npm run dev              # 用户端 Web
 ```
 
 ### 代码规范
 
 - **Go**: 遵循 `gofmt` 和 `golangci-lint`
 - **React/TypeScript**: ESLint + Prettier
-- **Vue 3**: ESLint + StyleLint
+- **Tailwind/shadcn**: 组件优先 + utility-first 样式规范
 
 ### 测试
 

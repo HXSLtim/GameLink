@@ -106,5 +106,5 @@ IMAGE_TAG=latest
 
 - GHCR 推送失败：检查仓库是否允许 `GITHUB_TOKEN` 推送包，或改用 `GHCR_TOKEN`（PAT）在构建工作流登录并推送。
 - 服务器端拉取失败：确认服务器已安装 Docker（含 Compose v2）、开放 22 端口，以及 `GHCR_USERNAME/GHCR_TOKEN` 是否有效。
-- 前端无法访问 API：`frontend/nginx.conf` 已将 `/api/` 代理到 `http://backend:8080`，确保 Compose 网络与服务名一致。
+- 前端无法访问 API：`scripts/nginx.conf` 已将 `/api/` 代理到后端，确保 Compose 网络与服务名一致。
 - Go 依赖下载失败：已在 Dockerfile 启用 BuildKit 缓存与 `GOPROXY`；如处于大陆网络，建议在仓库变量设置 `GOPROXY=https://goproxy.cn,direct`，或检查是否存在需要配置 `GOPRIVATE/GONOSUMDB` 的私有依赖。

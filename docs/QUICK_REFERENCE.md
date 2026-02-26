@@ -84,24 +84,18 @@ npm run format
 npm run type-check
 ```
 
-### 小程序/H5 开发
+### 用户端 Web 开发
 
 ```bash
-# H5 开发
+# 启动开发
 cd app
-npm run dev:h5
+npm run dev
 
-# 微信小程序
-npm run dev:mp-weixin
+# 生产构建
+npm run build
 
-# 支付宝小程序
-npm run dev:mp-alipay
-
-# H5 构建
-npm run build:h5
-
-# 微信小程序构建
-npm run build:mp-weixin
+# 预览构建
+npm run preview
 ```
 
 ### Docker 命令
@@ -167,7 +161,7 @@ git branch -d feature/your-feature
 |------|------|------|
 | Go API | 8080 | 后端 API |
 | Admin Dev | 5173 | 管理后台开发服务器 |
-| App Dev | 5174 | 小程序/H5 开发服务器 |
+| User Dev | 5175 | 用户端 Web 开发服务器 |
 | PostgreSQL | 5432 | 数据库 |
 | Redis | 6379 | 缓存 |
 | Swagger | 8080/swagger | API 文档 |

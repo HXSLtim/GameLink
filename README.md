@@ -10,7 +10,7 @@
 |----|------|------|
 | 后端 | Go + Gin + GORM | Go 1.24.5 |
 | 管理后台 | React + Ant Design + TypeScript | React 19 / AntD 6 |
-| 小程序/H5 | uni-app + Vue 3 + TypeScript | Vue 3.4 |
+| 用户端 Web | React + shadcn/ui + Tailwind CSS | React 19 |
 | 数据库 | PostgreSQL | 16+ |
 | 缓存 | Redis | 7+ |
 | 部署 | Docker + Nginx | - |
@@ -36,15 +36,13 @@ GameLink/
 │       ├── components/ # 通用组件
 │       ├── api/        # API 封装
 │       └── router/     # 路由配置
-├── app/                # 小程序/H5（uni-app）
+├── app/                # 用户端 Web（React + shadcn/ui + Tailwind）
 │   └── src/
-│       ├── pages/      # 28 个页面
-│       ├── components/ # 133 个组件
-│       ├── composables/# 38 个 Hook
-│       ├── api/        # 14 个 API 模块
-│       ├── store/      # 3 个 Store
-│       ├── styles/     # 主题系统（CSS 变量）
-│       └── types/      # 27 个类型定义
+│       ├── features/   # 业务页面
+│       ├── components/ # UI 组件（含 shadcn/ui）
+│       ├── services/   # API 与业务服务
+│       ├── hooks/      # 业务 Hook
+│       └── lib/        # 通用工具
 ├── docs/               # 项目文档（PRD/进度/架构）
 ├── scripts/            # 部署脚本
 └── docker-compose.yml  # Docker 编排
@@ -107,19 +105,15 @@ npm run dev
 # 访问 http://localhost:5173
 ```
 
-**小程序/H5：**
+**用户端 Web：**
 
 ```bash
 cd app
 npm install
 
-# H5 开发
-npm run dev:h5
-# 访问 http://localhost:5174
-
-# 微信小程序
-npm run dev:mp-weixin
-# 用微信开发者工具打开 dist/dev/mp-weixin
+# 启动开发
+npm run dev
+# 访问 http://localhost:5175
 ```
 
 ---
@@ -136,7 +130,7 @@ npm run dev:mp-weixin
 
 ## 核心功能
 
-### 用户端（小程序/H5）
+### 用户端（Web）
 
 - 浏览陪玩师（筛选、排序、搜索）
 - 下单 + 支付（余额/微信/支付宝）
@@ -232,8 +226,7 @@ npm run test
 | 开发任务 | [docs/DEV_TASKS_BACKLOG.md](docs/DEV_TASKS_BACKLOG.md) | 开发任务清单 |
 | PRD | [docs/PRD.md](docs/PRD.md) | 产品需求文档 |
 | 进度 | [docs/PROGRESS.md](docs/PROGRESS.md) | 项目进度与版本历史 |
-| 组件文档 | [app/docs/COMPONENTS.md](app/docs/COMPONENTS.md) | 小程序组件职责 |
-| 重构计划 | [app/docs/REFACTOR_PLAN.md](app/docs/REFACTOR_PLAN.md) | 前端重构记录 |
+| 用户端实现 | [app/src](app/src) | React + shadcn/ui + Tailwind 代码 |
 
 ---
 
@@ -243,7 +236,7 @@ npm run test
 |------|--------|------|
 | 后端 API | 100% | 已完成，待联调 |
 | 管理后台 | 90% | 核心功能完成，部分页面待完善 |
-| 小程序 / H5 | 95% | 组件化完成，API 对齐完成，待联调 |
+| 用户端 Web | 95% | React 版本可用，持续迭代中 |
 | DevOps | 85% | CI/CD 完成，生产部署配置待验证 |
 
 **当前版本**: v5.1 | **最后更新**: 2026-02-11
@@ -258,7 +251,7 @@ npm run test
 - [ ] 生产环境部署验证
 
 ### 中优先级
-- [ ] 小程序单元测试
+- [ ] 用户端 Web 单元测试
 - [ ] E2E 测试
 - [ ] 性能测试与优化
 
@@ -272,7 +265,7 @@ npm run test
 |-----|------|
 | 产品经理 | 产品规划、需求分析、文档管理 |
 | 后端开发 | API 开发、数据库设计 |
-| 前端开发 | 管理后台、小程序/H5 开发 |
+| 前端开发 | 管理后台、用户端 Web 开发 |
 | DevOps | 部署、CI/CD、运维 |
 
 ---

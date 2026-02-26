@@ -39,7 +39,7 @@
 |------|----------|----------|
 | 后端 API | 8081 | 8080 |
 | 管理后台 | 5173 | 80/443 (Nginx) |
-| 小程序 H5 | 5174 | 80/443 (Nginx) |
+| 用户端 Web | 5175 | 80/443 (Nginx) |
 | PostgreSQL | 5432 | 内网 |
 | Redis | 6379 | 内网 |
 | WebSocket | 8081/ws | 8080/ws |
@@ -110,7 +110,7 @@ npm run dev
 # 访问 http://localhost:5173
 ```
 
-### 2.6 启动小程序/H5
+### 2.6 启动用户端 Web
 
 ```bash
 cd app
@@ -118,13 +118,9 @@ cd app
 # 安装依赖
 npm install
 
-# H5 开发
-npm run dev:h5
-# 访问 http://localhost:5174
-
-# 微信小程序
-npm run dev:mp-weixin
-# 用微信开发者工具打开 dist/dev/mp-weixin
+# 启动开发服务器
+npm run dev
+# 访问 http://localhost:5175
 ```
 
 ---
@@ -238,7 +234,7 @@ curl https://staging-api.yourdomain.com/health
 
 - [ ] 微信支付：商户号、API密钥、证书
 - [ ] 支付宝：应用ID、私钥、公钥
-- [ ] 微信小程序：AppID、AppSecret
+- [ ] 用户端 Web：API_BASE_URL 等配置
 - [ ] 短信服务：AccessKey、签名
 - [ ] OSS：Bucket、AccessKey
 
@@ -389,8 +385,8 @@ cp -r dist/* /var/www/gamelink/admin/
 
 cd ../app
 npm ci
-npm run build:h5
-cp -r/dist/dev/h5/* /var/www/gamelink/h5/
+npm run build
+cp -r dist/* /var/www/gamelink/app/
 
 # 3. 构建后端
 cd ../api

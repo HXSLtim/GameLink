@@ -30,6 +30,10 @@
 ## 📋 业务文档
 
 ### 需求分析
+- [**PRD（单一事实源）**](PRD.md) - 产品需求唯一事实源（范围/优先级/验收）
+- [**PRD 治理规则**](PRD_GOVERNANCE.md) - 低维护文档策略与更新门禁
+- [**产品路线图**](PRODUCT_ROADMAP.md) - 仅里程碑与时间规划
+- [**项目进度**](PROGRESS.md) - 仅交付进度与阻塞项
 - [**业务需求分析**](BUSINESS_REQUIREMENTS_ANALYSIS.md) - 业务需求详细分析
 - [**工作流程 C**](WORKFLOW_C_IMPLEMENTATION_GUIDE.md) - 工作流程 C 实现指南
 - [**工作流程 C 总结**](WORKFLOW_C_IMPLEMENTATION_SUMMARY.md) - 工作流程 C 实现总结

@@ -110,10 +110,10 @@ SEED_ENABLED=true               # 生产环境必须为 false
 
 #### 外部 API 配置
 
-**微信小程序（可选）**
+**微信登录（可选）**
 ```bash
-WECHAT_APPID=                   # 微信小程序 AppID
-WECHAT_SECRET=                  # 微信小程序 Secret
+WECHAT_APPID=                   # 微信应用 AppID
+WECHAT_SECRET=                  # 微信应用 Secret
 # 获取方式: 微信公众平台 -> 开发 -> 开发管理 -> 开发设置
 ```
 
@@ -226,7 +226,7 @@ VITE_TIMEZONE=Asia/Shanghai
 
 ---
 
-### 3. 移动端环境变量 (`app/.env.example`)
+### 3. 用户端 Web 环境变量 (`app/.env.example`)
 
 ```bash
 # API 基础路径
@@ -297,12 +297,12 @@ redis-cli -a *** ping
 
 ### 可选依赖
 
-#### 3. 微信小程序
-**用途：** 小程序登录、支付
+#### 3. 微信登录
+**用途：** 微信授权登录、支付
 
 **必需配置：**
-- `WECHAT_APPID`: 小程序 AppID
-- `WECHAT_SECRET`: 小程序 Secret
+- `WECHAT_APPID`: 微信应用 AppID
+- `WECHAT_SECRET`: 微信应用 Secret
 
 **获取方式：**
 1. 登录微信公众平台
@@ -464,20 +464,18 @@ npm run test:e2e     # E2E 测试
 - 静态资源：CacheFirst（30天）
 - CSS/JS：StaleWhileRevalidate（7天）
 
-### 3. 移动端构建配置
+### 3. 用户端 Web 构建配置
 
-#### UniApp 支持
-- 微信小程序
-- 支付宝小程序
-- H5
-- App (iOS/Android)
+#### 技术栈
+- React 19
+- Tailwind CSS v4
+- shadcn/ui
 
 **构建脚本：**
 ```bash
-npm run dev:mp-weixin    # 微信小程序开发
-npm run build:mp-weixin  # 微信小程序构建
-npm run dev:h5           # H5 开发
-npm run build:h5         # H5 构建
+npm run dev
+npm run build
+npm run preview
 ```
 
 ---

@@ -60,7 +60,7 @@ code --version
 **推荐工具**:
 - Postman（API 测试）
 - DBeaver（数据库客户端）
--微信开发者工具（小程序开发）
+-浏览器开发者工具（Web 调试）
 
 ### 下午（3-4小时）
 
@@ -94,18 +94,18 @@ npm run dev
 # 访问: http://localhost:5173
 # 登录: admin@gamelink.com / Admin123456
 
-# 7. 启动小程序/H5
+# 7. 启动用户端 Web
 cd ../app
 npm install
-npm run dev:h5
-# 访问: http://localhost:5174
+npm run dev
+# 访问: http://localhost:5175
 ```
 
 #### 1.4 第一天检查清单
 
 - [ ] 后端 API 可以访问
 - [ ] 管理后台可以登录
-- [ ] 小程序 H5 可以打开
+- [ ] 用户端 Web 可以打开
 - [ ] 可以查看 Swagger 文档
 - [ ] 可以访问数据库
 
@@ -134,11 +134,11 @@ GameLink/
 │       ├── components/# 通用组件
 │       ├── api/       # API 封装
 │       └── store/     # 状态管理
-└── app/              # uni-app 小程序/H5
+└── app/              # 用户端 Web
     └── src/
-        ├── pages/     # 页面
-        ├── components/# 组件
-        └── api/       # API 调用
+        ├── features/   # 页面功能
+        ├── components/ # 组件
+        └── services/   # API 调用
 ```
 
 **阅读顺序**:
@@ -479,18 +479,17 @@ npm run lint
 npm run format
 ```
 
-### 前端开发（小程序）
+### 前端开发（用户端 Web）
 
 ```bash
-# H5 开发
-npm run dev:h5
-
-# 微信小程序
-npm run dev:mp-weixin
+# 启动开发
+npm run dev
 
 # 构建
-npm run build:h5
-npm run build:mp-weixin
+npm run build
+
+# 预览
+npm run preview
 ```
 
 ### Docker 命令
