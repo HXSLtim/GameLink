@@ -626,6 +626,7 @@ type ServiceItemRepository interface {
 	List(ctx context.Context, opts ServiceItemListOptions) ([]model.ServiceItem, int64, error)
 	Update(ctx context.Context, item *model.ServiceItem) error
 	Delete(ctx context.Context, id uint64) error
+	CountOrderReferences(ctx context.Context, id uint64) (int64, error)
 	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
 	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error
 	BatchUpdatePrice(ctx context.Context, ids []uint64, basePriceCents int64) error

@@ -2,9 +2,12 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
+	"gamelink/internal/model"
+	alertrepo "gamelink/internal/repository/alert"
 	"gamelink/pkg/cache"
 
 	"github.com/robfig/cron/v3"
@@ -14,19 +17,21 @@ import (
 // BusinessScheduler 综合业务调度器
 // 处理：优惠券过期/锁定释放、VIP过期、活动状态、争议SLA等
 type BusinessScheduler struct {
-	db     *gorm.DB
-	lock   cache.DistributedLock
-	logger *slog.Logger
-	Cron   *cron.Cron
+	db        *gorm.DB
+	lock      cache.DistributedLock
+	alertRepo model.AlertRepository
+	logger    *slog.Logger
+	Cron      *cron.Cron
 }
 
 // NewBusinessScheduler 创建综合业务调度器
 func NewBusinessScheduler(db *gorm.DB, lock cache.DistributedLock) *BusinessScheduler {
 	return &BusinessScheduler{
-		db:     db,
-		lock:   lock,
-		logger: slog.Default(),
-		Cron:   cron.New(cron.WithSeconds()),
+		db:        db,
+		lock:      lock,
+		alertRepo: alertrepo.NewAlertRepository(db),
+		logger:    slog.Default(),
+		Cron:      cron.New(cron.WithSeconds()),
 	}
 }
 
@@ -262,9 +267,34 @@ func (s *BusinessScheduler) checkDisputeSLA(ctx context.Context) {
 
 	if result.Error != nil {
 		s.logger.Error("Failed to escalate disputes (2h)", "error", result.Error)
-	} else if result.RowsAffected > 0 {
-		s.logger.Error("URGENT: Disputes exceeded 2h SLA", "count", result.RowsAffected)
-		// TODO: 发送告警给主管
+	} else {
+		s.handleDisputeSLA2hBreach(ctx, result.RowsAffected)
+	}
+}
+
+func (s *BusinessScheduler) handleDisputeSLA2hBreach(ctx context.Context, breachedCount int64) {
+	if breachedCount <= 0 {
+		return
+	}
+
+	s.logger.Error("URGENT: Disputes exceeded 2h SLA", "count", breachedCount)
+
+	if s.alertRepo == nil {
+		s.logger.Error("Failed to create dispute SLA alert: alert repository is nil")
+		return
+	}
+
+	alert := &model.Alert{
+		Level:   model.AlertLevelHigh,
+		Type:    model.AlertTypeBusiness,
+		Title:   "争议 SLA 超时告警",
+		Message: fmt.Sprintf("有 %d 条争议单超过 2 小时仍未处理，请主管立即介入。", breachedCount),
+		Source:  "scheduler:dispute:sla",
+		IsRead:  false,
+	}
+
+	if err := s.alertRepo.Create(ctx, alert); err != nil {
+		s.logger.Error("Failed to create dispute SLA alert", "error", err, "count", breachedCount)
 	}
 }
 

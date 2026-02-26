@@ -121,6 +121,19 @@ func (r *serviceItemRepository) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&model.ServiceItem{}, id).Error
 }
 
+// CountOrderReferences 统计订单对服务项目的引用数量
+func (r *serviceItemRepository) CountOrderReferences(ctx context.Context, id uint64) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&model.Order{}).
+		Where("item_id = ?", id).
+		Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // BatchDelete 批量删除服务项目
 func (r *serviceItemRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
 	if len(ids) == 0 {

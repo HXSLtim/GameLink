@@ -551,6 +551,25 @@ func (s *ServiceItemService) BatchDeleteItems(ctx context.Context, req BatchDele
 			continue
 		}
 
+		// 删除前检查是否存在订单引用
+		orderRefCount, err := s.items.CountOrderReferences(ctx, itemID)
+		if err != nil {
+			response.FailedItems = append(response.FailedItems, BatchOperationErrorItem{
+				ID:      itemID,
+				Message: "check order references failed",
+			})
+			response.FailedCount++
+			continue
+		}
+		if orderRefCount > 0 {
+			response.FailedItems = append(response.FailedItems, BatchOperationErrorItem{
+				ID:      itemID,
+				Message: fmt.Sprintf("service item is referenced by %d order(s)", orderRefCount),
+			})
+			response.FailedCount++
+			continue
+		}
+
 		// 删除项目
 		err = s.items.Delete(ctx, itemID)
 		if err != nil {
