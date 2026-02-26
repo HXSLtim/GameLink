@@ -66,6 +66,8 @@ func TestProviderFactory_CreateProvider_WeChatDisabled(t *testing.T) {
 
 // TestProviderFactory_CreateProvider_AlipayEnabled tests Alipay provider creation when enabled
 func TestProviderFactory_CreateProvider_AlipayEnabled(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+
 	cfg := &external.Config{
 		WeChatPay: config.WeChatPayConfig{
 			Enabled: false,
@@ -88,6 +90,28 @@ func TestProviderFactory_CreateProvider_AlipayEnabled(t *testing.T) {
 	if err == nil {
 		assert.NotNil(t, provider)
 	}
+}
+
+// TestProviderFactory_CreateProvider_AlipayEnabled_ProductionInitFailureFailsClosed ensures production does not silently fallback to mock when Alipay init fails.
+func TestProviderFactory_CreateProvider_AlipayEnabled_ProductionInitFailureFailsClosed(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+
+	cfg := &external.Config{
+		Alipay: config.AlipayConfig{
+			Enabled:        true,
+			AppID:          "test_app_id",
+			PrivateKeyPath: "not_exists_private_key.pem",
+			PublicKeyPath:  "not_exists_public_key.pem",
+		},
+	}
+
+	factory := NewProviderFactory(cfg)
+
+	provider, err := factory.CreateProvider(model.PaymentMethodAlipay)
+	assert.Error(t, err)
+	assert.Nil(t, provider)
+	assert.Contains(t, err.Error(), "production")
+	assert.Contains(t, err.Error(), "failed")
 }
 
 // TestProviderFactory_CreateProvider_AlipayDisabled tests Alipay provider creation when disabled (mock)
@@ -136,6 +160,8 @@ func TestProviderFactory_CreateProvider_GenericMethod(t *testing.T) {
 
 // TestProviderFactory_CreateProviders tests creating all providers
 func TestProviderFactory_CreateProviders(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+
 	tests := []struct {
 		name              string
 		weChatEnabled     bool
@@ -202,6 +228,34 @@ func TestProviderFactory_CreateProviders(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestProviderFactory_CreateProviders_AlipayEnabled_ProductionInitFailureUsesFailClosedProvider ensures production CreateProviders keeps a fail-closed provider instead of mock fallback.
+func TestProviderFactory_CreateProviders_AlipayEnabled_ProductionInitFailureUsesFailClosedProvider(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+
+	cfg := &external.Config{
+		WeChatPay: config.WeChatPayConfig{
+			Enabled: true,
+		},
+		Alipay: config.AlipayConfig{
+			Enabled:        true,
+			AppID:          "test_app_id",
+			PrivateKeyPath: "not_exists_private_key.pem",
+			PublicKeyPath:  "not_exists_public_key.pem",
+		},
+	}
+
+	factory := NewProviderFactory(cfg)
+	providers := factory.CreateProviders()
+
+	assert.Contains(t, providers, model.PaymentMethodAlipay)
+
+	payment := &model.Payment{Base: model.Base{ID: 1}, AmountCents: 10000}
+	_, _, _, err := providers[model.PaymentMethodAlipay].Refund(context.Background(), payment, "test")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "production")
+	assert.Contains(t, err.Error(), "failed")
 }
 
 // TestPaymentService_RefundPayment_ThirdParty_Success tests third-party payment refund.

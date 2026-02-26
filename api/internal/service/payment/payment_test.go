@@ -2,6 +2,7 @@ package payment
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -222,6 +223,8 @@ func createTestWallet(userID uint64, balanceCents, frozenCents int64) *model.Wal
 
 // TestPaymentService_CreatePayment_ThirdParty_Success tests successful third-party payment creation
 func TestPaymentService_CreatePayment_ThirdParty_Success(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+
 	ctx := context.Background()
 	userID := uint64(100)
 	orderID := uint64(1000)
@@ -255,6 +258,40 @@ func TestPaymentService_CreatePayment_ThirdParty_Success(t *testing.T) {
 	assert.Greater(t, resp.PaymentID, uint64(0))
 	assert.NotNil(t, resp.PayInfo)
 	assert.Equal(t, int64(10000), resp.ThirdPartyAmount)
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+}
+
+// TestPaymentService_CreatePayment_ThirdParty_ProductionFailsWithoutRealProvider ensures production refuses mock-only third-party providers.
+func TestPaymentService_CreatePayment_ThirdParty_ProductionFailsWithoutRealProvider(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+
+	req := CreatePaymentRequest{
+		OrderID: orderID,
+		Method:  model.PaymentMethodWeChat,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	require.Error(t, err)
+	require.Nil(t, resp)
+	assert.Contains(t, err.Error(), "provider")
+	assert.Contains(t, err.Error(), "production")
 
 	mockOrders.AssertExpectations(t)
 	mockPayments.AssertExpectations(t)
@@ -477,6 +514,8 @@ func TestPaymentService_CreatePayment_Wallet_NoWallet(t *testing.T) {
 
 // TestPaymentService_CreatePayment_Combined_Success tests successful combined payment
 func TestPaymentService_CreatePayment_Combined_Success(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+
 	ctx := context.Background()
 	userID := uint64(100)
 	orderID := uint64(1000)
@@ -524,6 +563,46 @@ func TestPaymentService_CreatePayment_Combined_Success(t *testing.T) {
 	mockOrders.AssertExpectations(t)
 	mockPayments.AssertExpectations(t)
 	mockWallets.AssertExpectations(t)
+}
+
+// TestPaymentService_CreatePayment_Combined_ProductionFailsWithoutRealProvider ensures production blocks combined payment when the third-party provider is mock-only.
+func TestPaymentService_CreatePayment_Combined_ProductionFailsWithoutRealProvider(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+	mockWallets := new(MockWalletRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.wallets = mockWallets
+
+	req := CreatePaymentRequest{
+		OrderID:           orderID,
+		Method:            model.PaymentMethodCombined,
+		WalletAmountCents: 5000,
+		ThirdPartyMethod:  model.PaymentMethodWeChat,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	require.Error(t, err)
+	require.Nil(t, resp)
+	assert.Contains(t, err.Error(), "provider")
+	assert.Contains(t, err.Error(), "production")
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+	mockWallets.AssertExpectations(t)
+	mockWallets.AssertNotCalled(t, "GetByUserID", ctx, userID)
 }
 
 // TestPaymentService_CreatePayment_Combined_InvalidWalletAmount tests combined payment with invalid wallet amount
@@ -1041,6 +1120,42 @@ func TestPaymentService_HandlePaymentCallback_Success(t *testing.T) {
 	mockOrders.AssertExpectations(t)
 }
 
+// TestPaymentService_HandlePaymentCallback_NoTxManager ensures callback path returns a clear error when tx manager is missing.
+func TestPaymentService_HandlePaymentCallback_NoTxManager(t *testing.T) {
+	ctx := context.Background()
+	paymentID := uint64(1)
+	orderID := uint64(1000)
+	userID := uint64(100)
+	amountCents := int64(10000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPending, amountCents, model.PaymentMethodWeChat)
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, amountCents)
+
+	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+
+	callbackData := map[string]interface{}{
+		"payment_id":   paymentID,
+		"amount_cents": amountCents,
+		"trade_no":     "wx_trade_123",
+	}
+
+	var err error
+	assert.NotPanics(t, func() {
+		err = service.HandlePaymentCallback(ctx, "wechat", callbackData)
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "transaction manager not configured")
+
+	mockPayments.AssertExpectations(t)
+	mockOrders.AssertExpectations(t)
+}
+
 // TestPaymentService_HandlePaymentCallback_AmountMismatch tests payment callback with amount mismatch
 func TestPaymentService_HandlePaymentCallback_AmountMismatch(t *testing.T) {
 	ctx := context.Background()
@@ -1228,6 +1343,8 @@ func (m *MockDistributedLock) Unlock(ctx context.Context, key string) error {
 
 // TestPaymentService_RoutingEngineNotInitialized tests behavior when routing engine is not initialized
 func TestPaymentService_RoutingEngineNotInitialized(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+
 	ctx := context.Background()
 	mockPayments := new(MockPaymentRepository)
 	mockOrders := new(MockOrderRepository)
@@ -1597,4 +1714,188 @@ func TestPaymentService_HandlePaymentCallback_NoAmount(t *testing.T) {
 	assert.NoError(t, err)
 	mockPayments.AssertExpectations(t)
 	mockOrders.AssertExpectations(t)
+}
+
+type mockAlipayCreateOrderProvider struct {
+	createOrderCalled bool
+	lastOrderID       string
+	lastSubject       string
+	lastAmountCents   int64
+	result            map[string]interface{}
+	err               error
+}
+
+func (m *mockAlipayCreateOrderProvider) Refund(ctx context.Context, p *model.Payment, reason string) (string, json.RawMessage, time.Time, error) {
+	_ = ctx
+	_ = p
+	_ = reason
+	return "mock_refund", nil, time.Now(), nil
+}
+
+func (m *mockAlipayCreateOrderProvider) CreateOrder(ctx context.Context, orderID, subject string, amountCents int64) (map[string]interface{}, error) {
+	_ = ctx
+	m.createOrderCalled = true
+	m.lastOrderID = orderID
+	m.lastSubject = subject
+	m.lastAmountCents = amountCents
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.result == nil {
+		return map[string]interface{}{"provider": "alipay"}, nil
+	}
+	return m.result, nil
+}
+
+type mockRefundOnlyProvider struct{}
+
+func (m mockRefundOnlyProvider) Refund(ctx context.Context, p *model.Payment, reason string) (string, json.RawMessage, time.Time, error) {
+	_ = ctx
+	_ = p
+	_ = reason
+	return "mock_refund", nil, time.Now(), nil
+}
+
+// TestPaymentService_CreatePayment_ThirdParty_ProductionUsesProviderCreateOrder ensures production calls provider create-order instead of returning mock payInfo.
+func TestPaymentService_CreatePayment_ThirdParty_ProductionUsesProviderCreateOrder(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(nil).Run(func(args mock.Arguments) {
+		payment := args.Get(1).(*model.Payment)
+		payment.ID = 7
+	})
+
+	provider := &mockAlipayCreateOrderProvider{
+		result: map[string]interface{}{
+			"provider":       "alipay-real",
+			"order_token":    "tok_123",
+			"order_signature": "sig_abc",
+		},
+	}
+
+	service := NewPaymentService(PaymentDeps{
+		Payments: mockPayments,
+		Orders:   mockOrders,
+		Providers: map[model.PaymentMethod]ProviderClient{
+			model.PaymentMethodAlipay: provider,
+		},
+	})
+
+	req := CreatePaymentRequest{
+		OrderID: orderID,
+		Method:  model.PaymentMethodAlipay,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, uint64(7), resp.PaymentID)
+	assert.Equal(t, "alipay-real", resp.PayInfo["provider"])
+	assert.Equal(t, "tok_123", resp.PayInfo["order_token"])
+	assert.Equal(t, int64(10000), resp.ThirdPartyAmount)
+	assert.Equal(t, int64(10000), provider.lastAmountCents)
+	assert.True(t, provider.createOrderCalled)
+	assert.NotContains(t, resp.PayInfo, "prepay_id")
+	assert.NotContains(t, resp.PayInfo, "qr_code")
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+}
+
+// TestPaymentService_CreatePayment_ThirdParty_ProductionFailsWhenProviderCannotCreateOrder ensures production fails closed when provider has no create-order capability.
+func TestPaymentService_CreatePayment_ThirdParty_ProductionFailsWhenProviderCannotCreateOrder(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+
+	service := NewPaymentService(PaymentDeps{
+		Payments: mockPayments,
+		Orders:   mockOrders,
+		Providers: map[model.PaymentMethod]ProviderClient{
+			model.PaymentMethodAlipay: mockRefundOnlyProvider{},
+		},
+	})
+
+	req := CreatePaymentRequest{
+		OrderID: orderID,
+		Method:  model.PaymentMethodAlipay,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	require.Error(t, err)
+	require.Nil(t, resp)
+	assert.Contains(t, err.Error(), "unavailable")
+	assert.Contains(t, err.Error(), "production")
+	mockPayments.AssertNotCalled(t, "Create", ctx, mock.Anything)
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+}
+
+// TestPaymentService_CreatePayment_Combined_ProductionFailsWhenProviderCannotCreateOrder ensures combined payment also fails closed before wallet deduction.
+func TestPaymentService_CreatePayment_Combined_ProductionFailsWhenProviderCannotCreateOrder(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+	mockWallets := new(MockWalletRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+
+	service := NewPaymentService(PaymentDeps{
+		Payments: mockPayments,
+		Orders:   mockOrders,
+		Providers: map[model.PaymentMethod]ProviderClient{
+			model.PaymentMethodAlipay: mockRefundOnlyProvider{},
+		},
+	})
+	service.wallets = mockWallets
+
+	req := CreatePaymentRequest{
+		OrderID:           orderID,
+		Method:            model.PaymentMethodCombined,
+		WalletAmountCents: 5000,
+		ThirdPartyMethod:  model.PaymentMethodAlipay,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	require.Error(t, err)
+	require.Nil(t, resp)
+	assert.Contains(t, err.Error(), "unavailable")
+	assert.Contains(t, err.Error(), "production")
+
+	mockWallets.AssertNotCalled(t, "GetByUserID", ctx, userID)
+	mockPayments.AssertNotCalled(t, "Create", ctx, mock.Anything)
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
 }

@@ -1,6 +1,7 @@
 package payment
 
 import (
+	"fmt"
 	"log/slog"
 
 	"gamelink/internal/model"
@@ -29,6 +30,9 @@ func (f *ProviderFactory) CreateProvider(method model.PaymentMethod) (ProviderCl
 		if f.config.Alipay.Enabled {
 			provider, err := NewAlipayProvider(f.config)
 			if err != nil {
+				if isProductionLikeEnv() {
+					return nil, fmt.Errorf("alipay provider initialization failed in production: %w", err)
+				}
 				slog.Error("failed to create alipay provider, falling back to mock", "error", err)
 				return alipayProvider{}, nil
 			}
@@ -55,10 +59,25 @@ func (f *ProviderFactory) CreateProviders() map[model.PaymentMethod]ProviderClie
 	if f.config.Alipay.Enabled {
 		provider, err := NewAlipayProvider(f.config)
 		if err != nil || provider == nil {
-			// ⚠️ 生产风险: Alipay 配置为启用但 provider 创建失败，降级为 mock。
-			// 应检查密钥文件路径配置是否正确。
+			initErr := err
+			if initErr == nil {
+				initErr = fmt.Errorf("provider is nil")
+			}
+			if isProductionLikeEnv() {
+				slog.Error("alipay enabled but provider creation failed, using fail-closed provider",
+					"error", initErr,
+					"publicKeyPath", f.config.Alipay.PublicKeyPath,
+					"privateKeyPath", f.config.Alipay.PrivateKeyPath,
+				)
+				providers[model.PaymentMethodAlipay] = failClosedProvider{
+					method: model.PaymentMethodAlipay,
+					cause:  initErr,
+				}
+				return providers
+			}
+
 			slog.Error("alipay enabled but provider creation failed, falling back to mock provider",
-				"error", err,
+				"error", initErr,
 				"publicKeyPath", f.config.Alipay.PublicKeyPath,
 				"privateKeyPath", f.config.Alipay.PrivateKeyPath,
 			)

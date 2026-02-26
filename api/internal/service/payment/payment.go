@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"gamelink/internal/model"
@@ -325,6 +327,9 @@ func (s *PaymentService) createCombinedPayment(ctx context.Context, userID uint6
 	if req.WalletAmountCents >= order.TotalPriceCents {
 		return nil, apierr.BadRequest("wallet amount must be less than total price for combined payment, use wallet method instead")
 	}
+	if err := s.ensureThirdPartyProviderReady(req.ThirdPartyMethod); err != nil {
+		return nil, err
+	}
 
 	// 获取用户钱包
 	wallet, err := s.wallets.GetByUserID(ctx, userID)
@@ -380,13 +385,22 @@ func (s *PaymentService) createCombinedPayment(ctx context.Context, userID uint6
 	}
 
 	// 生成第三方支付参数
-	payInfo := s.generateMockPayInfo(payment.ID, req.ThirdPartyMethod, thirdPartyAmount)
+	payInfo, err := s.buildThirdPartyPayInfo(ctx, req.ThirdPartyMethod, order, payment.ID, thirdPartyAmount)
+	if err != nil {
+		// 回滚钱包余额（下单失败不应扣款）
+		_, _ = s.wallets.UpdateBalanceWithLock(ctx, userID, req.WalletAmountCents, 3)
+		payment.Status = model.PaymentStatusFailed
+		_ = s.payments.Update(ctx, payment)
+		return nil, err
+	}
 	payInfo["walletDeducted"] = req.WalletAmountCents
 	payInfo["combinedPayment"] = true
 
-	// Mock: 自动完成第三方支付（仅用于测试）
-	if err := s.mockPaymentSuccess(ctx, payment.ID, order); err != nil {
-		return nil, err
+	// 仅在安全环境下自动完成模拟支付
+	if s.shouldAutoMarkPaid() {
+		if err := s.mockPaymentSuccess(ctx, payment.ID, order); err != nil {
+			return nil, err
+		}
 	}
 
 	return &CreatePaymentResponse{
@@ -399,6 +413,10 @@ func (s *PaymentService) createCombinedPayment(ctx context.Context, userID uint6
 
 // createThirdPartyPayment 创建纯第三方支付
 func (s *PaymentService) createThirdPartyPayment(ctx context.Context, userID uint64, order *model.Order, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
+	if err := s.ensureThirdPartyProviderReady(req.Method); err != nil {
+		return nil, err
+	}
+
 	// 创建支付记录
 	payment := &model.Payment{
 		RequestID:             req.RequestID, // 设置幂等请求ID
@@ -432,12 +450,19 @@ func (s *PaymentService) createThirdPartyPayment(ctx context.Context, userID uin
 		}
 	}
 
-	// Mock: 生成支付参数
-	payInfo := s.generateMockPayInfo(payment.ID, req.Method, order.TotalPriceCents)
-
-	// Mock: 自动标记为已支付（仅用于测试）
-	if err := s.mockPaymentSuccess(ctx, payment.ID, order); err != nil {
+	// 生成支付参数（生产环境调用真实 provider 下单）
+	payInfo, err := s.buildThirdPartyPayInfo(ctx, req.Method, order, payment.ID, order.TotalPriceCents)
+	if err != nil {
+		payment.Status = model.PaymentStatusFailed
+		_ = s.payments.Update(ctx, payment)
 		return nil, err
+	}
+
+	// 仅在安全环境下自动完成模拟支付
+	if s.shouldAutoMarkPaid() {
+		if err := s.mockPaymentSuccess(ctx, payment.ID, order); err != nil {
+			return nil, err
+		}
 	}
 
 	return &CreatePaymentResponse{
@@ -517,6 +542,166 @@ func (s *PaymentService) generateMockPayInfo(paymentID uint64, method model.Paym
 	}
 
 	return payInfo
+}
+
+func (s *PaymentService) buildThirdPartyPayInfo(
+	ctx context.Context,
+	method model.PaymentMethod,
+	order *model.Order,
+	paymentID uint64,
+	amountCents int64,
+) (map[string]interface{}, error) {
+	if !isProductionLikeEnv() {
+		return s.generateMockPayInfo(paymentID, method, amountCents), nil
+	}
+
+	client, ok := s.providers[method]
+	if !ok || client == nil {
+		return nil, apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+			WithDetails(fmt.Sprintf("method=%s provider is missing", method))
+	}
+
+	subject := "payment_order"
+	if order != nil {
+		subject = fmt.Sprintf("order_%d", order.ID)
+		if title := strings.TrimSpace(order.Title); title != "" {
+			subject = title
+		}
+	}
+	outTradeNo := fmt.Sprintf("%d", paymentID)
+
+	var (
+		payInfo map[string]interface{}
+		err     error
+	)
+	switch method {
+	case model.PaymentMethodWeChat:
+		creator, ok := client.(wechatOrderCreator)
+		if !ok {
+			return nil, apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+				WithDetails(fmt.Sprintf("method=%s provider does not support create-order", method))
+		}
+		payInfo, err = creator.CreateOrder(ctx, outTradeNo, subject, amountCents, "127.0.0.1")
+	case model.PaymentMethodAlipay:
+		creator, ok := client.(alipayOrderCreator)
+		if !ok {
+			return nil, apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+				WithDetails(fmt.Sprintf("method=%s provider does not support create-order", method))
+		}
+		payInfo, err = creator.CreateOrder(ctx, outTradeNo, subject, amountCents)
+	default:
+		return nil, apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+			WithDetails(fmt.Sprintf("method=%s unsupported in production", method))
+	}
+	if err != nil {
+		return nil, apierr.ServiceUnavailable("third-party payment order creation failed in production").
+			WithDetails(fmt.Sprintf("method=%s error=%v", method, err))
+	}
+	if payInfo == nil {
+		return nil, apierr.ServiceUnavailable("third-party payment order creation failed in production").
+			WithDetails(fmt.Sprintf("method=%s returned empty pay info", method))
+	}
+
+	payInfo["paymentId"] = paymentID
+	payInfo["amountCents"] = amountCents
+	payInfo["currency"] = "CNY"
+	return payInfo, nil
+}
+
+func (s *PaymentService) shouldAutoMarkPaid() bool {
+	if enabled, ok := parseBoolEnv("PAYMENT_MOCK_AUTO_SUCCESS"); ok {
+		return enabled
+	}
+
+	env := currentRuntimeEnv()
+	if env == "" {
+		// Backward-compatible default for local/test runs without explicit environment.
+		return true
+	}
+
+	switch env {
+	case "dev", "development", "local", "test", "testing":
+		return true
+	case "prod", "production", "staging", "stage", "preprod", "pre-production":
+		return false
+	default:
+		return false
+	}
+}
+
+func currentRuntimeEnv() string {
+	env := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	if env == "" {
+		env = strings.ToLower(strings.TrimSpace(os.Getenv("GO_ENV")))
+	}
+	return env
+}
+
+func isProductionLikeEnv() bool {
+	switch currentRuntimeEnv() {
+	case "prod", "production", "staging", "stage", "preprod", "pre-production":
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *PaymentService) ensureThirdPartyProviderReady(method model.PaymentMethod) error {
+	if !isProductionLikeEnv() {
+		return nil
+	}
+	if method != model.PaymentMethodWeChat && method != model.PaymentMethodAlipay {
+		return nil
+	}
+
+	client, ok := s.providers[method]
+	if !ok || client == nil {
+		return apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+			WithDetails(fmt.Sprintf("method=%s provider is missing", method))
+	}
+
+	switch p := client.(type) {
+	case wechatProvider, *wechatProvider, alipayProvider, *alipayProvider, genericProvider, *genericProvider:
+		return apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+			WithDetails(fmt.Sprintf("method=%s provider is mock", method))
+	case failClosedProvider:
+		return apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+			WithDetails(p.unavailableError().Error())
+	case *failClosedProvider:
+		return apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+			WithDetails(p.unavailableError().Error())
+	default:
+		if !supportsProductionOrderCreation(method, client) {
+			return apierr.ServiceUnavailable("third-party payment provider unavailable in production").
+				WithDetails(fmt.Sprintf("method=%s provider does not support create-order", method))
+		}
+		return nil
+	}
+}
+
+func supportsProductionOrderCreation(method model.PaymentMethod, client ProviderClient) bool {
+	switch method {
+	case model.PaymentMethodWeChat:
+		_, ok := client.(wechatOrderCreator)
+		return ok
+	case model.PaymentMethodAlipay:
+		_, ok := client.(alipayOrderCreator)
+		return ok
+	default:
+		return false
+	}
+}
+
+func parseBoolEnv(name string) (bool, bool) {
+	val := strings.ToLower(strings.TrimSpace(os.Getenv(name)))
+	switch val {
+	case "1", "true", "yes", "on":
+		return true, true
+	case "0", "false", "no", "off":
+		return false, true
+	default:
+		return false, false
+	}
 }
 
 // mockPaymentSuccess Mock 支付成功（仅用于测试）
@@ -638,6 +823,9 @@ func (s *PaymentService) HandlePaymentCallback(ctx context.Context, provider str
 	}
 
 	// 使用事务确保支付状态和订单状态的原子性更新
+	if s.tx == nil {
+		return apierr.InternalError("transaction manager not configured")
+	}
 	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
 		if err := r.Payments.Update(ctx, payment); err != nil {
 			return fmt.Errorf("update payment: %w", err)
