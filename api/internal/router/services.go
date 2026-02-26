@@ -34,6 +34,7 @@ import (
 	playerservicerepo "gamelink/internal/repository/playerservice"
 	presencerepo "gamelink/internal/repository/presence"
 	rechargerepo "gamelink/internal/repository/recharge"
+	reconciliationrepo "gamelink/internal/repository/reconciliation"
 	referralrepo "gamelink/internal/repository/referral"
 	reviewdisplaysettingsrepo "gamelink/internal/repository/reviewdisplaysettings"
 	routingrulerepo "gamelink/internal/repository/routingrule"
@@ -70,6 +71,7 @@ import (
 	playerrankservice "gamelink/internal/service/playerrank"
 	presenceservice "gamelink/internal/service/presence"
 	rechargeservice "gamelink/internal/service/recharge"
+	reconciliationservice "gamelink/internal/service/reconciliation"
 	referralservice "gamelink/internal/service/referral"
 	reviewservice "gamelink/internal/service/review"
 	routingruleservice "gamelink/internal/service/routingrule"
@@ -174,6 +176,8 @@ type appServices struct {
 	teamSvc *teamservice.TeamService
 	// Referral service (推荐)
 	referralSvc *referralservice.Service
+	// Reconciliation service (对账)
+	reconciliationSvc *reconciliationservice.Service
 	// Withdraw routing service (提现分流)
 	withdrawRoutingSvc *withdrawservice.WithdrawRoutingService
 	// Presence service (在线状态)
@@ -382,6 +386,10 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	referralRepo := referralrepo.NewReferralRepository(orm)
 	referralSvc := referralservice.NewReferralService(referralRepo)
 
+	// Reconciliation service (对账)
+	reconciliationRepo := reconciliationrepo.NewRepository(orm)
+	reconciliationSvc := reconciliationservice.NewService(reconciliationRepo)
+
 	// Withdraw routing service (提现分流)
 	settlementCompanyRepo := settlementcompanyrepo.NewSettlementCompanyRepository(orm)
 	withdrawRoutingSvc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementCompanyRepo)
@@ -484,6 +492,8 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 		teamSvc: teamSvc,
 		// Referral service
 		referralSvc: referralSvc,
+		// Reconciliation service
+		reconciliationSvc: reconciliationSvc,
 		// Withdraw routing service
 		withdrawRoutingSvc: withdrawRoutingSvc,
 		// Presence service

@@ -437,6 +437,9 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	// Referral routes (推荐管理)
 	r.registerReferralRoutes(rbacGroup)
 
+	// Reconciliation routes (对账管理)
+	r.registerReconciliationRoutes(rbacGroup)
+
 	// Game Category routes (游戏分类管理)
 	r.registerGameCategoryRoutes(rbacGroup)
 
@@ -612,6 +615,11 @@ func (r *Router) registerTeamRoutes(rbacGroup *gin.RouterGroup) {
 // registerReferralRoutes 注册推荐管理路由
 func (r *Router) registerReferralRoutes(rbacGroup *gin.RouterGroup) {
 	adminhandler.RegisterReferralRoutes(rbacGroup, r.services.referralSvc, r.permMiddleware)
+}
+
+// registerReconciliationRoutes 注册对账管理路由
+func (r *Router) registerReconciliationRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterReconciliationRoutes(rbacGroup, r.services.reconciliationSvc, r.permMiddleware)
 }
 
 // registerGameCategoryRoutes 注册游戏分类管理路由

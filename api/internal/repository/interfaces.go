@@ -1049,6 +1049,35 @@ type VipLevelListOptions struct {
 	IsActive *bool
 }
 
+// ============================================================================
+// 对账模块接口
+// ============================================================================
+
+// ReconciliationRepository 对账仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type ReconciliationRepository interface {
+	List(ctx context.Context, opts ReconciliationListOptions) ([]model.Reconciliation, int64, error)
+	Get(ctx context.Context, id uint64, withDetails bool) (*model.Reconciliation, error)
+	Create(ctx context.Context, rec *model.Reconciliation) error
+	Execute(ctx context.Context, id uint64, opts ReconciliationExecuteOptions) (*model.Reconciliation, error)
+}
+
+// ReconciliationListOptions 对账单列表查询选项
+type ReconciliationListOptions struct {
+	Page     int
+	PageSize int
+	Type     *model.ReconciliationType
+	Status   *model.ReconciliationStatus
+	DateFrom *time.Time
+	DateTo   *time.Time
+}
+
+// ReconciliationExecuteOptions 对账执行参数
+type ReconciliationExecuteOptions struct {
+	ProcessedBy uint64
+	ForceStatus *model.ReconciliationStatus
+}
+
 // GameCategoryRepository 游戏分类仓储接口
 // 错误约定：当资源不存在时返回 repository.ErrNotFound
 type GameCategoryRepository interface {

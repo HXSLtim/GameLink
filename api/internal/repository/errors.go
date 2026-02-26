@@ -9,6 +9,9 @@ import (
 // ErrNotFound 表示记录不存在。
 var ErrNotFound = errors.New("record not found")
 
+// ErrInvalidStatusTransition indicates a status transition violates domain rules.
+var ErrInvalidStatusTransition = errors.New("invalid status transition")
+
 // WrapNotFound 将 gorm.ErrRecordNotFound 转换为 repository.ErrNotFound。
 // 如果 err 是 gorm.ErrRecordNotFound，返回 ErrNotFound；
 // 如果 err 为 nil，返回 nil；
