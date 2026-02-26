@@ -170,7 +170,7 @@ func (r *Router) registerRoutes() {
 	handler.RegisterHealth(api)
 
 	// 公共 API 路由（无需认证）
-	registerPublicRoutes(api, r.orm, r.cacheClient, r.cfg)
+	registerPublicRoutes(api, r.orm, r.cacheClient, r.cfg, r.services)
 
 	// 认证路由
 	handler.RegisterAuthRoutes(api, r.authSvc, r.services.referralTriggerSvc)
@@ -507,7 +507,7 @@ func (r *Router) syncAPIPermissions(permService *adminservice.PermissionService,
 			GroupFilter: "/api/v1/admin",
 			SkipPaths: []string{
 				"/api/v1/health",
-				"/api/v1/metrics",
+				"/metrics",
 				"/api/v1/swagger",
 			},
 			DryRun: false,

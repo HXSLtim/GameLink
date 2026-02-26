@@ -30,7 +30,7 @@ import (
 )
 
 // registerPublicRoutes 注册公共 API 路由（无需认证）
-func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) {
+func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig, services *appServices) {
 	publicGroup := api.Group("/public")
 
 	// 初始化仓库
@@ -92,6 +92,13 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.
 	// 注册验证码路由
 	verificationHandler := publichandler.NewVerificationHandler(verificationSvc)
 	verificationHandler.RegisterRoutes(publicGroup)
+
+	// 注册支付回调路由
+	paymentHandler := publichandler.NewPaymentHandler(nil, externalCfg)
+	if services != nil {
+		paymentHandler = publichandler.NewPaymentHandler(services.paymentSvc, externalCfg)
+	}
+	paymentHandler.RegisterRoutes(publicGroup)
 
 	// 注册 Banner 路由
 	bannerHandler := publichandler.NewBannerHandler(orm)
