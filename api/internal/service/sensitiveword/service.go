@@ -198,6 +198,23 @@ func (s *SensitiveWordService) DeleteSensitiveWord(ctx context.Context, id uint6
 	return nil
 }
 
+// GetSensitiveWord 获取敏感词详情
+func (s *SensitiveWordService) GetSensitiveWord(ctx context.Context, id uint64) (*SensitiveWordDTO, error) {
+	word, err := s.repo.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SensitiveWordDTO{
+		ID:        word.ID,
+		Word:      word.Word,
+		Category:  word.Category,
+		Severity:  word.Severity,
+		CreatedAt: word.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt: word.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}, nil
+}
+
 // ListSensitiveWords 列出敏感词
 func (s *SensitiveWordService) ListSensitiveWords(ctx context.Context, req ListSensitiveWordsRequest) (*ListSensitiveWordsResponse, error) {
 	// 默认分页参数

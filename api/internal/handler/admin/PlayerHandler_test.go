@@ -109,6 +109,8 @@ func (ctx *PlayerTestContext) RegisterPlayerRoutes() {
 		group.PUT("/:id/skill-tags", ctx.Handler.UpdatePlayerSkillTags)
 		group.PUT("/batch/status", ctx.Handler.BatchUpdatePlayerStatus)
 		group.POST("/batch/delete", ctx.Handler.BatchDeletePlayers)
+		group.POST("/batch/verification", ctx.Handler.BatchUpdateVerificationStatus)
+		group.POST("/batch/revoke-certification", ctx.Handler.BatchRevokeCertification)
 		group.GET("/:id/logs", ctx.Handler.ListPlayerLogs)
 	}
 }
@@ -583,4 +585,81 @@ func TestPlayerHandler_Unit_BatchDeletePlayers_InvalidID(t *testing.T) {
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/players/batch/delete", ctx.AdminToken, payload)
 	testutil.AssertError(t, w, http.StatusBadRequest)
+}
+
+func TestPlayerHandler_Unit_BatchUpdateVerificationStatus_Success(t *testing.T) {
+	ctx := SetupPlayerTest(t)
+	ctx.RegisterPlayerRoutes()
+
+	user1 := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+	player1 := testutil.CreateTestPlayer(t, ctx.DB, user1.ID)
+	require.NoError(t, ctx.DB.Model(&model.Player{}).Where("id = ?", player1.ID).
+		Update("verification_status", model.VerificationPending).Error)
+
+	user2 := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+	player2 := testutil.CreateTestPlayer(t, ctx.DB, user2.ID)
+	require.NoError(t, ctx.DB.Model(&model.Player{}).Where("id = ?", player2.ID).
+		Update("verification_status", model.VerificationPending).Error)
+
+	payload := map[string]interface{}{
+		"playerIds": []uint64{player1.ID, player2.ID},
+		"status":    "verified",
+		"remark":    "batch approve",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/players/batch/verification", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	data := response["data"].(map[string]interface{})
+	assert.Equal(t, float64(2), data["success_count"])
+	assert.Equal(t, float64(0), data["failed_count"])
+
+	var updated1 model.Player
+	require.NoError(t, ctx.DB.First(&updated1, player1.ID).Error)
+	assert.Equal(t, model.VerificationVerified, updated1.VerificationStatus)
+
+	var updated2 model.Player
+	require.NoError(t, ctx.DB.First(&updated2, player2.ID).Error)
+	assert.Equal(t, model.VerificationVerified, updated2.VerificationStatus)
+}
+
+func TestPlayerHandler_Unit_BatchRevokeCertification_Success(t *testing.T) {
+	ctx := SetupPlayerTest(t)
+	ctx.RegisterPlayerRoutes()
+
+	user1 := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+	player1 := testutil.CreateTestPlayer(t, ctx.DB, user1.ID)
+	require.NoError(t, ctx.DB.Model(&model.Player{}).Where("id = ?", player1.ID).
+		Update("verification_status", model.VerificationVerified).Error)
+
+	user2 := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+	player2 := testutil.CreateTestPlayer(t, ctx.DB, user2.ID)
+	require.NoError(t, ctx.DB.Model(&model.Player{}).Where("id = ?", player2.ID).
+		Update("verification_status", model.VerificationVerified).Error)
+
+	payload := map[string]interface{}{
+		"playerIds": []uint64{player1.ID, player2.ID},
+		"reason":    "policy update",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/players/batch/revoke-certification", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	data := response["data"].(map[string]interface{})
+	assert.Equal(t, float64(2), data["success_count"])
+	assert.Equal(t, float64(0), data["failed_count"])
+
+	var updated1 model.Player
+	require.NoError(t, ctx.DB.First(&updated1, player1.ID).Error)
+	assert.Equal(t, model.VerificationPending, updated1.VerificationStatus)
+
+	var updated2 model.Player
+	require.NoError(t, ctx.DB.First(&updated2, player2.ID).Error)
+	assert.Equal(t, model.VerificationPending, updated2.VerificationStatus)
 }

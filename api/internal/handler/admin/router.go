@@ -455,8 +455,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/verification [post]
-		// Batch player verification update - to be implemented in PlayerHandler
-		// group.POST("/players/batch/verification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/verification"), playerHandler.BatchUpdateVerificationStatus)
+		group.POST("/players/batch/verification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/verification"), playerHandler.BatchUpdateVerificationStatus)
 		// @Summary      批量撤销陪玩师认证
 		// @Description  批量撤销已通过认证的陪玩师，将状态改为待审核或已拒绝
 		// @Tags         Admin/Players
@@ -467,8 +466,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/revoke-certification [post]
-		// Batch player certification revocation - to be implemented in PlayerHandler
-		// group.POST("/players/batch/revoke-certification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/revoke-certification"), playerHandler.BatchRevokeCertification)
+		group.POST("/players/batch/revoke-certification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/revoke-certification"), playerHandler.BatchRevokeCertification)
 
 		// 订单管理 - 使用细粒度权		// @Summary      列出订单
 		// @Tags         Admin/Orders
@@ -836,11 +834,47 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Router       /admin/payments/{id}/refunds [get]
 		group.GET("/payments/:id/refunds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/refunds"), paymentHandler.GetRefundHistory)
 
-		// Batch payment operations - to be implemented when batch payment handlers are ready
-		// batchGroup := group.Group("/payments/batch")
-		// {
-		//     // Route definitions commented out pending handler implementation
-		// }
+		// 批量支付操作
+		// @Summary      批量确认支付入账
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchCapturePaymentsRequest  true  "支付ID列表和入账信息"
+		// @Success      200  {object}  adminservice.BatchCaptureResult
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/payments/batch/capture [post]
+		group.POST("/payments/batch/capture", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments/batch/capture"), paymentHandler.BatchCapturePayments)
+		// @Summary      批量退款
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchRefundPaymentsRequest  true  "支付ID列表和退款原因"
+		// @Success      200  {object}  adminservice.BatchCaptureResult
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/payments/batch/refund [post]
+		group.POST("/payments/batch/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments/batch/refund"), paymentHandler.BatchRefundPayments)
+		// @Summary      批量取消支付
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchCancelPaymentsRequest  true  "支付ID列表"
+		// @Success      200  {object}  adminservice.BatchCaptureResult
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/payments/batch/cancel [post]
+		group.POST("/payments/batch/cancel", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments/batch/cancel"), paymentHandler.BatchCancelPayments)
+		// @Summary      批量更新支付状态
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchUpdatePaymentsStatusRequest  true  "支付ID列表和状态"
+		// @Success      200  {object}  adminservice.BatchCaptureResult
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/payments/batch/status [put]
+		group.PUT("/payments/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/payments/batch/status"), paymentHandler.BatchUpdatePaymentsStatus)
 
 		// 评价管理 - 使用细粒度权		// @Summary      评价列表
 		// @Tags         Admin/Reviews
@@ -1253,6 +1287,16 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Success      200  {object}  sensitiveword.ListSensitiveWordsResponse
 		// @Router       /admin/sensitive-words [get]
 		group.GET("/sensitive-words", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/sensitive-words"), handler.ListSensitiveWords)
+
+		// @Summary      获取敏感词详情
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "敏感词ID"
+		// @Success      200  {object}  sensitiveword.SensitiveWordDTO
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/sensitive-words/{id} [get]
+		group.GET("/sensitive-words/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/sensitive-words/:id"), handler.GetSensitiveWord)
 
 		// @Summary      添加敏感词
 		// @Tags         Admin/SensitiveWords

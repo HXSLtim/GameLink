@@ -357,14 +357,30 @@ type BatchUpdateSensitiveWordStatusRequest struct {
 	IsActive bool     `json:"isActive" binding:"required"`
 }
 
-// GetSensitiveWord 获取敏感词详情
+// GetSensitiveWord
+// @Summary      获取敏感词详情
+// @Tags         Admin/SensitiveWords
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path  int  true  "敏感词ID"
+// @Success      200  {object}  sensitiveword.SensitiveWordDTO
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/sensitive-words/{id} [get]
 func (h *SensitiveWordHandler) GetSensitiveWord(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
 	if !ok {
 		return
 	}
 
-	// GetSensitiveWord to be implemented when SensitiveWordService has GetByID method
-	_ = id
-	respondError(c, apierr.InternalError("GetSensitiveWord not implemented"))
+	dto, err := h.svc.GetSensitiveWord(c.Request.Context(), id)
+	if errors.Is(err, sensitiveword.ErrNotFound) {
+		respondError(c, apierr.NotFound("sensitive word not found"))
+		return
+	}
+	if err != nil {
+		respondError(c, apierr.InternalError(err.Error()))
+		return
+	}
+
+	respondSuccess(c, dto)
 }

@@ -114,6 +114,10 @@ func (ctx *PaymentTestContext) RegisterPaymentRoutes() {
 		group.POST("/:id/refund", ctx.Handler.RefundPayment)
 		group.GET("/:id/refunds", ctx.Handler.GetRefundHistory)
 		group.GET("/:id/logs", ctx.Handler.ListPaymentLogs)
+		group.POST("/batch/capture", ctx.Handler.BatchCapturePayments)
+		group.POST("/batch/refund", ctx.Handler.BatchRefundPayments)
+		group.POST("/batch/cancel", ctx.Handler.BatchCancelPayments)
+		group.PUT("/batch/status", ctx.Handler.BatchUpdatePaymentsStatus)
 	}
 }
 
@@ -635,4 +639,117 @@ func TestPaymentHandler_Unit_ListPaymentLogs_NotFound(t *testing.T) {
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "GET", "/admin/payments/999999/logs", ctx.AdminToken, nil)
 	testutil.AssertError(t, w, http.StatusNotFound)
+}
+
+func TestPaymentHandler_Unit_BatchCapturePayments_Success(t *testing.T) {
+	ctx := SetupPaymentTest(t)
+	ctx.RegisterPaymentRoutes()
+
+	p1 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPending)
+	p2 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPending)
+
+	payload := map[string]interface{}{
+		"paymentIds": []uint64{p1.ID, p2.ID},
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/payments/batch/capture", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var response map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+	data := response["data"].(map[string]interface{})
+	assert.Equal(t, float64(2), data["successCount"])
+	assert.Equal(t, float64(0), data["failedCount"])
+
+	testutil.AssertPaymentStatus(t, ctx.DB, p1.ID, model.PaymentStatusPaid)
+	testutil.AssertPaymentStatus(t, ctx.DB, p2.ID, model.PaymentStatusPaid)
+}
+
+func TestPaymentHandler_Unit_BatchRefundPayments_Success(t *testing.T) {
+	ctx := SetupPaymentTest(t)
+	ctx.RegisterPaymentRoutes()
+
+	p1 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPaid)
+	p2 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPaid)
+
+	payload := map[string]interface{}{
+		"paymentIds": []uint64{p1.ID, p2.ID},
+		"reason":     "batch refund",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/payments/batch/refund", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var response map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+	data := response["data"].(map[string]interface{})
+	assert.Equal(t, float64(2), data["successCount"])
+	assert.Equal(t, float64(0), data["failedCount"])
+
+	testutil.AssertPaymentStatus(t, ctx.DB, p1.ID, model.PaymentStatusRefunded)
+	testutil.AssertPaymentStatus(t, ctx.DB, p2.ID, model.PaymentStatusRefunded)
+}
+
+func TestPaymentHandler_Unit_BatchCancelPayments_Success(t *testing.T) {
+	ctx := SetupPaymentTest(t)
+	ctx.RegisterPaymentRoutes()
+
+	p1 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPending)
+	p2 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPending)
+
+	payload := map[string]interface{}{
+		"paymentIds": []uint64{p1.ID, p2.ID},
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/payments/batch/cancel", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var response map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+	data := response["data"].(map[string]interface{})
+	assert.Equal(t, float64(2), data["successCount"])
+	assert.Equal(t, float64(0), data["failedCount"])
+
+	testutil.AssertPaymentStatus(t, ctx.DB, p1.ID, model.PaymentStatusFailed)
+	testutil.AssertPaymentStatus(t, ctx.DB, p2.ID, model.PaymentStatusFailed)
+}
+
+func TestPaymentHandler_Unit_BatchUpdatePaymentsStatus_Success(t *testing.T) {
+	ctx := SetupPaymentTest(t)
+	ctx.RegisterPaymentRoutes()
+
+	p1 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPending)
+	p2 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPending)
+
+	payload := map[string]interface{}{
+		"paymentIds": []uint64{p1.ID, p2.ID},
+		"status":     "paid",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "PUT", "/admin/payments/batch/status", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var response map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+	data := response["data"].(map[string]interface{})
+	assert.Equal(t, float64(2), data["successCount"])
+	assert.Equal(t, float64(0), data["failedCount"])
+
+	testutil.AssertPaymentStatus(t, ctx.DB, p1.ID, model.PaymentStatusPaid)
+	testutil.AssertPaymentStatus(t, ctx.DB, p2.ID, model.PaymentStatusPaid)
+}
+
+func TestPaymentHandler_Unit_BatchUpdatePaymentsStatus_InvalidStatus(t *testing.T) {
+	ctx := SetupPaymentTest(t)
+	ctx.RegisterPaymentRoutes()
+
+	p1 := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPending)
+
+	payload := map[string]interface{}{
+		"paymentIds": []uint64{p1.ID},
+		"status":     "invalid",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "PUT", "/admin/payments/batch/status", ctx.AdminToken, payload)
+	testutil.AssertError(t, w, http.StatusBadRequest)
 }
