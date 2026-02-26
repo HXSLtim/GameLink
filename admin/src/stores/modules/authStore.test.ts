@@ -10,6 +10,18 @@ import type { UserInfo } from '../types';
 import { authApi, type LoginResponse } from '../../api/auth';
 import type { ApiResponse } from '../../types/api';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { permissionStore } from '@/utils/permission';
+import { wsManager } from '@/utils/websocket';
+
+const cleanupMocks = vi.hoisted(() => ({
+  orderReset: vi.fn(),
+  clearPlayerStore: vi.fn(),
+  chatReset: vi.fn(),
+  chatCleanupWebSocket: vi.fn(),
+  clearPermissions: vi.fn(),
+  wsDisconnect: vi.fn(),
+  wsClearEventListeners: vi.fn(),
+}));
 
 // Helper to create mock AxiosResponse with ApiResponse structure
 function createMockApiResponse<T>(data: T): AxiosResponse<ApiResponse<T>> {
@@ -35,6 +47,38 @@ vi.mock('../../api/auth', () => ({
   },
 }));
 
+vi.mock('./orderStore', () => ({
+  useOrderStore: {
+    getState: () => ({ reset: cleanupMocks.orderReset }),
+  },
+}));
+
+vi.mock('./playerStore', () => ({
+  clearPlayerStore: cleanupMocks.clearPlayerStore,
+}));
+
+vi.mock('./chatStore', () => ({
+  useChatStore: {
+    getState: () => ({
+      reset: cleanupMocks.chatReset,
+      cleanupWebSocket: cleanupMocks.chatCleanupWebSocket,
+    }),
+  },
+}));
+
+vi.mock('@/utils/permission', () => ({
+  permissionStore: {
+    clearPermissions: cleanupMocks.clearPermissions,
+  },
+}));
+
+vi.mock('@/utils/websocket', () => ({
+  wsManager: {
+    disconnect: cleanupMocks.wsDisconnect,
+    clearEventListeners: cleanupMocks.wsClearEventListeners,
+  },
+}));
+
 describe('authStore', () => {
   beforeEach(() => {
     // Reset store state before each test - use setState for null values
@@ -47,6 +91,14 @@ describe('authStore', () => {
 
     // Clear all mocks
     vi.clearAllMocks();
+
+    cleanupMocks.orderReset.mockClear();
+    cleanupMocks.clearPlayerStore.mockClear();
+    cleanupMocks.chatReset.mockClear();
+    cleanupMocks.chatCleanupWebSocket.mockClear();
+    cleanupMocks.clearPermissions.mockClear();
+    cleanupMocks.wsDisconnect.mockClear();
+    cleanupMocks.wsClearEventListeners.mockClear();
   });
 
   afterEach(() => {
@@ -199,21 +251,6 @@ describe('authStore', () => {
       // Mock logout API
       vi.mocked(authApi.logout).mockResolvedValue(createMockApiResponse(null) as AxiosResponse);
 
-      // Mock other stores' reset methods
-      vi.doMock('./orderStore', () => ({
-        useOrderStore: {
-          getState: () => ({ reset: vi.fn() }),
-        },
-      }));
-      vi.doMock('./playerStore', () => ({
-        clearPlayerStore: vi.fn(),
-      }));
-      vi.doMock('./chatStore', () => ({
-        useChatStore: {
-          getState: () => ({ reset: vi.fn() }),
-        },
-      }));
-
       await act(async () => {
         await result.current.logout();
       });
@@ -222,8 +259,53 @@ describe('authStore', () => {
       expect(result.current.userInfo).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
       expect(result.current.loading).toBe(false);
-      // 验证 localStorage 中的 token 被清除（logout 会清除直接存储的 token）
-      // Note: 实际清除可能在 logout 函数中异步执行
+      expect(cleanupMocks.orderReset).toHaveBeenCalledTimes(1);
+      expect(cleanupMocks.clearPlayerStore).toHaveBeenCalledTimes(1);
+      expect(cleanupMocks.chatReset).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clear local caches, permission cache, and websocket handlers on logout', async () => {
+      const mockUser: UserInfo = {
+        id: 1,
+        name: 'Admin User',
+        email: 'admin@gamelink.com',
+        role: 'admin',
+        permissions: ['*'],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      };
+
+      const { result } = renderHook(() => useAuthStore());
+
+      act(() => {
+        result.current.setToken('mock-token');
+        result.current.setUserInfo(mockUser);
+      });
+
+      localStorage.setItem('token', 'legacy-token');
+      localStorage.setItem('user_info', '{"id":1}');
+      localStorage.setItem('user_role', 'admin');
+      localStorage.setItem('auth-storage', '{"state":{"token":"persisted"}}');
+      sessionStorage.setItem('auth_token', 'legacy-token');
+      sessionStorage.setItem('auth-storage', '{"state":{"token":"persisted"}}');
+
+      vi.mocked(authApi.logout).mockResolvedValue(createMockApiResponse(null) as AxiosResponse);
+
+      await act(async () => {
+        await result.current.logout();
+      });
+
+      expect(localStorage.getItem('token')).toBeNull();
+      expect(localStorage.getItem('user_info')).toBeNull();
+      expect(localStorage.getItem('user_role')).toBeNull();
+      expect(localStorage.getItem('auth-storage')).toBeNull();
+      expect(sessionStorage.getItem('auth_token')).toBeNull();
+      expect(sessionStorage.getItem('auth-storage')).toBeNull();
+
+      expect(permissionStore.clearPermissions).toHaveBeenCalledTimes(1);
+      expect(wsManager.disconnect).toHaveBeenCalledTimes(1);
+      expect(wsManager.clearEventListeners).toHaveBeenCalledTimes(1);
+      expect(cleanupMocks.chatCleanupWebSocket).toHaveBeenCalledTimes(1);
     });
 
     it('should handle logout API failure gracefully', async () => {

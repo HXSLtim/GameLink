@@ -140,8 +140,37 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
 
-          // 不再手动清理 localStorage，persist 中间件会自动处理
-          // 只需要清空状态，中间件会同步到 localStorage
+          // Explicitly clear legacy auth caches used by different layers.
+          try {
+            const localKeys = ['token', 'user_info', 'user_role', 'auth-storage'];
+            const sessionKeys = ['auth_token', 'auth-storage'];
+
+            for (const key of localKeys) {
+              localStorage.removeItem(key);
+            }
+            for (const key of sessionKeys) {
+              sessionStorage.removeItem(key);
+            }
+          } catch (e) {
+            logger.warn('Failed to clear local/session auth cache:', e);
+          }
+
+          // Clear permission cache
+          try {
+            const { permissionStore } = await import('@/utils/permission');
+            permissionStore.clearPermissions();
+          } catch (e) {
+            logger.warn('Failed to clear permission cache:', e);
+          }
+
+          // Disconnect WebSocket and clear listeners
+          try {
+            const { wsManager } = await import('@/utils/websocket');
+            wsManager.disconnect();
+            wsManager.clearEventListeners();
+          } catch (e) {
+            logger.warn('Failed to cleanup websocket manager:', e);
+          }
 
           // Clear other stores
           // Note: Dynamic imports to avoid circular dependencies
@@ -161,7 +190,9 @@ export const useAuthStore = create<AuthState>()(
 
           try {
             const { useChatStore } = await import('./chatStore');
-            useChatStore.getState().reset();
+            const chatState = useChatStore.getState();
+            chatState.cleanupWebSocket?.();
+            chatState.reset();
           } catch (e) {
             logger.warn('Failed to clear chatStore:', e);
           }

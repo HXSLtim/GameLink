@@ -234,7 +234,7 @@ export const DataExport: React.FC<DataExportProps> = ({
         setModalVisible(false);
       }, 500);
     }
-  }, [data, fetchData, columns, filename, maxRecords, exportCSV, exportJSON, onSuccess, onError]);
+  }, [data, fetchData, filename, maxRecords, exportCSV, exportJSON, onSuccess, onError]);
 
   // 确认导出
   const confirmExport = useCallback((format: ExportFormat) => {
