@@ -301,6 +301,10 @@ func (s *OrderService) createOrderWithSplit(
 	// 构建主订单和子订单
 	group, subOrders := s.buildOrderGroupWithSubOrders(userID, req, hourlyPrice, commissionPerHour, playerIncomePerHour)
 
+	if s.tx == nil {
+		return nil, apierr.InternalError("transaction manager not configured")
+	}
+
 	// 使用事务确保主订单和所有子订单原子性创建
 	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		// 1. 创建主订单
@@ -572,6 +576,17 @@ func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID u
 				} else {
 					// 兼容逻辑：没有退款服务时直接标记退款（使用原子更新）
 					now := time.Now()
+					refundedAmount := payment.AmountCents
+					if refundedAmount <= 0 {
+						refundedAmount = order.TotalPriceCents
+					}
+					payment.Status = model.PaymentStatusRefunded
+					payment.RefundedAt = &now
+					payment.RefundedAmountCents = refundedAmount
+					if err := s.payments.Update(ctx, &payment); err != nil {
+						return err
+					}
+
 					updated, err := s.orders.UpdateWithCondition(ctx, orderID, originalStatus, map[string]any{
 						"status":              model.OrderStatusRefunded,
 						"cancel_reason":       req.Reason,

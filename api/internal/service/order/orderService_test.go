@@ -219,7 +219,8 @@ func (m *MockGameRepository) GetByIDs(ctx context.Context, ids []uint64) ([]mode
 }
 
 type MockPaymentRepository struct {
-	listPayments func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error)
+	listPayments  func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error)
+	updatePayment func(ctx context.Context, payment *model.Payment) error
 }
 
 func (m *MockPaymentRepository) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
@@ -236,8 +237,13 @@ func (m *MockPaymentRepository) Get(ctx context.Context, id uint64) (*model.Paym
 func (m *MockPaymentRepository) GetWithRelations(ctx context.Context, id uint64) (*model.Payment, error) {
 	return nil, nil
 }
-func (m *MockPaymentRepository) Update(ctx context.Context, payment *model.Payment) error { return nil }
-func (m *MockPaymentRepository) Delete(ctx context.Context, id uint64) error              { return nil }
+func (m *MockPaymentRepository) Update(ctx context.Context, payment *model.Payment) error {
+	if m.updatePayment != nil {
+		return m.updatePayment(ctx, payment)
+	}
+	return nil
+}
+func (m *MockPaymentRepository) Delete(ctx context.Context, id uint64) error { return nil }
 func (m *MockPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) {
 	return nil, nil
 }
@@ -880,11 +886,17 @@ func TestOrderService_CancelOrder_WithRefund(t *testing.T) {
 	}
 
 	paymentTime := time.Now()
+	var updatedPayment *model.Payment
 	payments := &MockPaymentRepository{
 		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
 			return []model.Payment{
 				{Base: model.Base{ID: 1}, Method: model.PaymentMethodAlipay, AmountCents: 5000, Status: model.PaymentStatusPaid, PaidAt: &paymentTime},
 			}, 1, nil
+		},
+		updatePayment: func(ctx context.Context, payment *model.Payment) error {
+			clone := *payment
+			updatedPayment = &clone
+			return nil
 		},
 	}
 
@@ -908,6 +920,10 @@ func TestOrderService_CancelOrder_WithRefund(t *testing.T) {
 	assert.Equal(t, int64(5000), capturedUpdates["refund_amount_cents"])
 	assert.Equal(t, "用户取消订单", capturedUpdates["refund_reason"])
 	assert.NotNil(t, capturedUpdates["refunded_at"])
+	require.NotNil(t, updatedPayment)
+	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+	assert.Equal(t, int64(5000), updatedPayment.RefundedAmountCents)
+	assert.NotNil(t, updatedPayment.RefundedAt)
 }
 
 // TestOrderService_CancelOrder_InvalidStatus tests order cancellation with invalid status

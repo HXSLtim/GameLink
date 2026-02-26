@@ -342,6 +342,56 @@ func TestTransferSubOrder_UnverifiedPlayer(t *testing.T) {
 	assert.Contains(t, err.Error(), "新陪玩师未通过认证")
 }
 
+// TestTransferSubOrder_NoTxManager ensures transfer returns a clear error instead of panicking.
+func TestTransferSubOrder_NoTxManager(t *testing.T) {
+	ctx := context.Background()
+	operatorID := uint64(1)
+	subOrderID := uint64(10)
+	groupID := uint64(1)
+	newPlayerID := uint64(200)
+
+	subOrder := createTestSubOrder(subOrderID, 1, groupID, 2, model.OrderStatusPending)
+
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			return subOrder, nil
+		},
+	}
+
+	players := &MockPlayerRepository{
+		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
+			return &model.Player{
+				Base:               model.Base{ID: id},
+				VerificationStatus: model.VerificationVerified,
+			}, nil
+		},
+	}
+
+	service := NewOrderService(OrderDeps{
+		Orders:      orders,
+		Players:     players,
+		Users:       &MockUserRepository{},
+		Games:       &MockGameRepository{},
+		Payments:    &MockPaymentRepository{},
+		Reviews:     &MockReviewRepository{},
+		Commissions: &MockCommissionRepository{},
+	})
+
+	req := TransferSubOrderRequest{
+		SubOrderID:  subOrderID,
+		NewPlayerID: newPlayerID,
+	}
+
+	var resp *TransferSubOrderResponse
+	var err error
+	assert.NotPanics(t, func() {
+		resp, err = service.TransferSubOrder(ctx, operatorID, req)
+	})
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "transaction manager not configured")
+}
+
 // TestBatchTransferSubOrders_Success 测试批量转单成功
 func TestBatchTransferSubOrders_Success(t *testing.T) {
 	ctx := context.Background()

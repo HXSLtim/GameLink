@@ -279,6 +279,56 @@ func TestCreateOrderWithSplit_Success(t *testing.T) {
 	}
 }
 
+// TestCreateOrderWithSplit_NoTxManager ensures split creation fails gracefully when tx manager is not configured.
+func TestCreateOrderWithSplit_NoTxManager(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(1)
+	playerID := uint64(100)
+	gameID := uint64(1)
+	scheduledStart := time.Now().Add(time.Hour)
+
+	players := &MockPlayerRepository{
+		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
+			return createTestPlayer(id, 200), nil
+		},
+	}
+
+	games := &MockGameRepository{
+		getGame: func(ctx context.Context, id uint64) (*model.Game, error) {
+			return createTestGame(id), nil
+		},
+	}
+
+	service := NewOrderService(OrderDeps{
+		Orders:      &MockOrderRepository{},
+		OrderGroups: &mockOrderGroupRepo{},
+		Players:     players,
+		Users:       &MockUserRepository{},
+		Games:       games,
+		Payments:    &MockPaymentRepository{},
+		Reviews:     &MockReviewRepository{},
+		Commissions: &MockCommissionRepository{},
+	})
+
+	req := CreateOrderRequest{
+		PlayerID:       playerID,
+		GameID:         gameID,
+		Title:          "3小时陪玩",
+		ScheduledStart: &scheduledStart,
+		DurationHours:  3,
+	}
+
+	var resp *CreateOrderResponse
+	var err error
+	assert.NotPanics(t, func() {
+		resp, err = service.CreateOrder(ctx, userID, req)
+	})
+
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "transaction manager not configured")
+}
+
 // TestCreateOrder_NoSplitForShortDuration 测试短时长不拆分
 func TestCreateOrder_NoSplitForShortDuration(t *testing.T) {
 	ctx := context.Background()

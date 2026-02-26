@@ -132,6 +132,10 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 	subOrder.CancelReason = fmt.Sprintf("转单给陪玩师 %d (已完成%d分钟): %s", req.NewPlayerID, completedMinutes, req.TransferNote)
 	subOrder.CompletedAt = &now
 
+	if s.tx == nil {
+		return nil, apierr.InternalError("transaction manager not configured")
+	}
+
 	// 8-10. 使用事务确保新订单创建、原订单更新、主订单状态更新的原子性
 	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
 		// 8. 保存新订单

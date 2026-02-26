@@ -237,6 +237,7 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 
 	// Mock payment repository to return paid payment
 	paymentTime := time.Now()
+	var updatedPayment *model.Payment
 	payments := &MockPaymentRepository{
 		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
 			return []model.Payment{
@@ -246,6 +247,11 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 					PaidAt: &paymentTime,
 				},
 			}, 1, nil
+		},
+		updatePayment: func(ctx context.Context, payment *model.Payment) error {
+			clone := *payment
+			updatedPayment = &clone
+			return nil
 		},
 	}
 
@@ -269,6 +275,10 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 	assert.Equal(t, int64(10000), capturedUpdates["refund_amount_cents"])
 	assert.Equal(t, "用户取消订单", capturedUpdates["refund_reason"])
 	assert.NotNil(t, capturedUpdates["refunded_at"])
+	require.NotNil(t, updatedPayment)
+	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+	assert.Equal(t, int64(10000), updatedPayment.RefundedAmountCents)
+	assert.NotNil(t, updatedPayment.RefundedAt)
 }
 
 // TestOrderService_CancelOrder_PendingNoRefund tests canceling pending order doesn't trigger refund
