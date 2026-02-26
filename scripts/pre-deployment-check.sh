@@ -16,6 +16,8 @@ TOTAL_CHECKS=0
 PASSED_CHECKS=0
 FAILED_CHECKS=0
 WARNING_CHECKS=0
+BACKEND_ENV_FILE=".env.production"
+ADMIN_ENV_FILE="admin/.env.production"
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -47,38 +49,56 @@ show_header() {
     echo ""
 }
 
+resolve_env_file() {
+    local target_var="$1"
+    local primary="$2"
+    local fallback="$3"
+
+    if [ -f "$primary" ]; then
+        log_success "$primary 文件存在"
+        printf -v "$target_var" "%s" "$primary"
+        return 0
+    fi
+
+    if [ -f "$fallback" ]; then
+        log_warning "$primary 文件不存在，使用 $fallback 进行预检查（仅示例配置）"
+        printf -v "$target_var" "%s" "$fallback"
+        return 0
+    fi
+
+    log_error "$primary 文件不存在，且未找到备用文件 $fallback"
+    printf -v "$target_var" "%s" ""
+    return 1
+}
+
 # 检查环境变量文件
 check_env_files() {
     log_info "检查环境变量文件..."
 
     local env_missing=false
 
-    # 检查 .env.production
-    if [ -f ".env.production" ]; then
-        log_success ".env.production 文件存在"
-
+    # 检查并解析后端环境文件
+    resolve_env_file BACKEND_ENV_FILE ".env.production" ".env.example"
+    if [ -n "$BACKEND_ENV_FILE" ]; then
         # 检查必需的变量
-        if grep -q "^CRYPTO_ENABLED=true" .env.production; then
+        if grep -q "^CRYPTO_ENABLED=true" "$BACKEND_ENV_FILE"; then
             log_success "  生产环境加密已启用"
         else
             log_warning "  生产环境加密未启用（CRYPTO_ENABLED != true）"
         fi
 
-        if grep -q "^SEED_ENABLED=false" .env.production; then
+        if grep -q "^SEED_ENABLED=false" "$BACKEND_ENV_FILE"; then
             log_success "  生产环境种子数据已禁用"
         else
             log_warning "  生产环境种子数据未禁用（SEED_ENABLED != false）"
         fi
     else
-        log_error ".env.production 文件不存在"
         env_missing=true
     fi
 
-    # 检查 admin/.env.production
-    if [ -f "admin/.env.production" ]; then
-        log_success "admin/.env.production 文件存在"
-    else
-        log_error "admin/.env.production 文件不存在"
+    # 检查并解析管理后台环境文件
+    resolve_env_file ADMIN_ENV_FILE "admin/.env.production" "admin/.env.example"
+    if [ -z "$ADMIN_ENV_FILE" ]; then
         env_missing=true
     fi
 
@@ -91,33 +111,36 @@ check_env_files() {
 check_crypto_consistency() {
     log_info "检查前后端加密配置一致性..."
 
-    if [ ! -f ".env.production" ] || [ ! -f "admin/.env.production" ]; then
+    if [ -z "$BACKEND_ENV_FILE" ] || [ -z "$ADMIN_ENV_FILE" ]; then
         log_warning "跳过加密配置检查（缺少 .env.production 文件）"
         return
     fi
 
     # 提取后端加密配置
-    local backend_enabled=$(grep "^CRYPTO_ENABLED=" .env.production | cut -d'=' -f2)
-    local backend_key=$(grep "^CRYPTO_SECRET_KEY=" .env.production | cut -d'=' -f2)
-    local backend_iv=$(grep "^CRYPTO_IV=" .env.production | cut -d'=' -f2)
-    local backend_sig=$(grep "^CRYPTO_USE_SIGNATURE=" .env.production | cut -d'=' -f2)
+    local backend_enabled=$(grep "^CRYPTO_ENABLED=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
+    local backend_key=$(grep "^CRYPTO_SECRET_KEY=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
+    local backend_iv=$(grep "^CRYPTO_IV=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
+    local backend_sig=$(grep "^CRYPTO_USE_SIGNATURE=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
 
     # 提取前端加密配置
-    local frontend_enabled=$(grep "^VITE_CRYPTO_ENABLED=" admin/.env.production | cut -d'=' -f2)
-    local frontend_key=$(grep "^VITE_CRYPTO_SECRET_KEY=" admin/.env.production | cut -d'=' -f2)
-    local frontend_iv=$(grep "^VITE_CRYPTO_IV=" admin/.env.production | cut -d'=' -f2)
-    local frontend_sig=$(grep "^VITE_CRYPTO_USE_SIGNATURE=" admin/.env.production | cut -d'=' -f2)
+    local frontend_enabled=$(grep "^VITE_CRYPTO_ENABLED=" "$ADMIN_ENV_FILE" | cut -d'=' -f2)
+    local frontend_key=$(grep "^VITE_CRYPTO_SECRET_KEY=" "$ADMIN_ENV_FILE" | cut -d'=' -f2)
+    local frontend_iv=$(grep "^VITE_CRYPTO_IV=" "$ADMIN_ENV_FILE" | cut -d'=' -f2)
+    local frontend_sig=$(grep "^VITE_CRYPTO_USE_SIGNATURE=" "$ADMIN_ENV_FILE" | cut -d'=' -f2)
 
     # 检查启用状态
     if [ "$backend_enabled" = "true" ] && [ "$frontend_enabled" = "true" ]; then
         log_success "加密启用状态一致：前后端均为 true"
     elif [ "$backend_enabled" = "false" ] && [ "$frontend_enabled" = "false" ]; then
         log_success "加密启用状态一致：前后端均为 false"
+        log_info "前后端加密均关闭，跳过签名和密钥长度检查"
+        return
     else
         log_error "加密启用状态不一致（后端: $backend_enabled, 前端: $frontend_enabled）"
+        return
     fi
 
-    # 检查签名配置
+    # 仅在启用加密时检查签名与密钥
     if [ "$backend_sig" = "$frontend_sig" ]; then
         log_success "签名配置一致：$backend_sig"
     else
@@ -157,19 +180,19 @@ check_crypto_consistency() {
 check_payment_config() {
     log_info "检查支付配置..."
 
-    if [ ! -f ".env.production" ]; then
+    if [ -z "$BACKEND_ENV_FILE" ]; then
         log_warning "跳过支付配置检查（缺少 .env.production 文件）"
         return
     fi
 
     # 检查微信支付
-    local wechat_enabled=$(grep "^WECHAT_PAY_ENABLED=" .env.production | cut -d'=' -f2)
+    local wechat_enabled=$(grep "^WECHAT_PAY_ENABLED=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
     if [ "$wechat_enabled" = "true" ]; then
         log_info "微信支付已启用"
 
-        local wechat_app_id=$(grep "^WECHAT_PAY_APP_ID=" .env.production | cut -d'=' -f2)
-        local wechat_mch_id=$(grep "^WECHAT_PAY_MCH_ID=" .env.production | cut -d'=' -f2)
-        local wechat_api_key=$(grep "^WECHAT_PAY_API_KEY=" .env.production | cut -d'=' -f2)
+        local wechat_app_id=$(grep "^WECHAT_PAY_APP_ID=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
+        local wechat_mch_id=$(grep "^WECHAT_PAY_MCH_ID=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
+        local wechat_api_key=$(grep "^WECHAT_PAY_API_KEY=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
 
         if [ -n "$wechat_app_id" ] && [ ${#wechat_app_id} -gt 10 ]; then
             log_success "  微信AppID已配置"
@@ -206,11 +229,11 @@ check_payment_config() {
     fi
 
     # 检查支付宝
-    local alipay_enabled=$(grep "^ALIPAY_ENABLED=" .env.production | cut -d'=' -f2)
+    local alipay_enabled=$(grep "^ALIPAY_ENABLED=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
     if [ "$alipay_enabled" = "true" ]; then
         log_info "支付宝已启用"
 
-        local alipay_app_id=$(grep "^ALIPAY_APP_ID=" .env.production | cut -d'=' -f2)
+        local alipay_app_id=$(grep "^ALIPAY_APP_ID=" "$BACKEND_ENV_FILE" | cut -d'=' -f2)
 
         if [ -n "$alipay_app_id" ] && [ ${#alipay_app_id} -gt 10 ]; then
             log_success "  支付宝应用ID已配置"

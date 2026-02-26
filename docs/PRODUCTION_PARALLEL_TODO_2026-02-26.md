@@ -60,3 +60,5 @@ Owner: Agent Team
   - `docker run --rm -v "<repo>/api:/src" -w /src golang:1.25.5-alpine sh -lc "/usr/local/go/bin/go test ./internal/router -run TestSyncAPIPermissionsSkipList_UsesRootMetricsPath -count=1"`
 - 2026-02-26: Wave-3 completed for `P2-01` reconciliation workflow: added admin reconciliation list/detail/create/execute APIs with repository/service/handler/router wiring. Verification passed:
   - `go test ./internal/repository/reconciliation ./internal/service/reconciliation ./internal/handler/admin ./internal/router -count=1`
+- 2026-02-26: Post-P2 engineering hardening: fixed `scripts/pre-deployment-check.sh` early-exit bug under `set -e`, added `.env.production`/`admin/.env.production` example fallback for repository precheck runs, and made crypto signature/key checks conditional on encryption enabled. Verification passed:
+  - `bash scripts/pre-deployment-check.sh`
