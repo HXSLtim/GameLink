@@ -62,3 +62,11 @@ Owner: Agent Team
   - `go test ./internal/repository/reconciliation ./internal/service/reconciliation ./internal/handler/admin ./internal/router -count=1`
 - 2026-02-26: Post-P2 engineering hardening: fixed `scripts/pre-deployment-check.sh` early-exit bug under `set -e`, added `.env.production`/`admin/.env.production` example fallback for repository precheck runs, and made crypto signature/key checks conditional on encryption enabled. Verification passed:
   - `bash scripts/pre-deployment-check.sh`
+- 2026-02-26: Modular commit continuation completed across remaining tracks (`api/order`, `admin/auth`, `app` migration, infra CI/compose hardening, docs governance and PRD validation). Engineering verification passed:
+  - `go test ./... -count=1` (under `api/`)
+  - `npm run lint` (under `admin/`)
+  - `npm run test:run` (under `admin/`)
+  - `npm run build` (under `app/`)
+  - `docker compose --env-file .env.example -f docker-compose.prod.yml config -q`
+  - `docker compose -f docker-compose.monitoring.yml config -q`
+  - `bash scripts/pre-deployment-check.sh`
