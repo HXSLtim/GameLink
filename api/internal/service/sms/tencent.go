@@ -37,6 +37,10 @@ func (p *TencentProvider) SendNotification(ctx context.Context, phone, templateI
 
 // sendRequest sends SMS request to Tencent Cloud
 func (p *TencentProvider) sendRequest(ctx context.Context, phone, templateID string, params map[string]string) error {
+	if isProductionEnv() {
+		return fmt.Errorf("%w: tencent sendRequest", ErrSMSIntegrationNotImplemented)
+	}
+
 	// Build request body (for future implementation)
 	_ = map[string]interface{}{
 		"PhoneNumberSet":   []string{p.formatPhone(phone)},

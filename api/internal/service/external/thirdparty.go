@@ -15,8 +15,11 @@ package external
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -33,6 +36,16 @@ const (
 	// ModeReal 真实模式 - 调用真实第三方API
 	ModeReal ThirdPartyMode = "real"
 )
+
+var (
+	ErrIdentityVerificationNotImplemented = errors.New("identity verification integration is not implemented in production")
+	ErrPaymentCallbackNotImplemented      = errors.New("payment callback verification integration is not implemented in production")
+)
+
+func isProductionEnv() bool {
+	env := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	return env == "production" || env == "prod"
+}
 
 // ThirdPartyConfig 第三方服务配置
 type ThirdPartyConfig struct {
@@ -139,6 +152,14 @@ func (v *MockIdentityVerifier) VerifyIdentity(ctx context.Context, realName, idC
 	return result, nil
 }
 
+// FailClosedIdentityVerifier 生产环境下的失败保护实现
+type FailClosedIdentityVerifier struct{}
+
+// VerifyIdentity 在生产环境下未接入实名服务时显式失败
+func (v *FailClosedIdentityVerifier) VerifyIdentity(ctx context.Context, realName, idCardNo string) (*IdentityVerifyResult, error) {
+	return nil, ErrIdentityVerificationNotImplemented
+}
+
 // ============================================================================
 // 真实接口实现 - TODO: 生产环境实现
 // ============================================================================
@@ -162,6 +183,10 @@ func NewAliyunIdentityVerifier(config IdentityConfig) *AliyunIdentityVerifier {
 
 // VerifyIdentity 调用阿里云身份证验证API
 func (v *AliyunIdentityVerifier) VerifyIdentity(ctx context.Context, realName, idCardNo string) (*IdentityVerifyResult, error) {
+	if isProductionEnv() {
+		return nil, fmt.Errorf("%w: aliyun", ErrIdentityVerificationNotImplemented)
+	}
+
 	// TODO: 实现阿里云身份证二要素验证 API 调用
 	//
 	// API 调用示例：
@@ -201,6 +226,10 @@ func NewTencentIdentityVerifier(config IdentityConfig) *TencentIdentityVerifier 
 
 // VerifyIdentity 调用腾讯云身份证验证API
 func (v *TencentIdentityVerifier) VerifyIdentity(ctx context.Context, realName, idCardNo string) (*IdentityVerifyResult, error) {
+	if isProductionEnv() {
+		return nil, fmt.Errorf("%w: tencent", ErrIdentityVerificationNotImplemented)
+	}
+
 	// TODO: 实现腾讯云身份核验 API 调用
 	//
 	// 需要使用腾讯云 SDK: tencentcloud-sdk-go
@@ -218,6 +247,9 @@ func (v *TencentIdentityVerifier) VerifyIdentity(ctx context.Context, realName, 
 // NewIdentityVerifier 根据配置创建身份证验证器
 func NewIdentityVerifier(config *ThirdPartyConfig) IdentityVerifier {
 	if config == nil || config.Mode == ModeMock {
+		if isProductionEnv() {
+			return &FailClosedIdentityVerifier{}
+		}
 		return NewMockIdentityVerifier()
 	}
 
@@ -227,7 +259,10 @@ func NewIdentityVerifier(config *ThirdPartyConfig) IdentityVerifier {
 	case "tencent":
 		return NewTencentIdentityVerifier(config.Identity)
 	default:
-		// 默认使用 Mock
+		// 非生产默认使用 Mock；生产环境必须显式失败，避免误用
+		if isProductionEnv() {
+			return &FailClosedIdentityVerifier{}
+		}
 		return NewMockIdentityVerifier()
 	}
 }
@@ -248,11 +283,28 @@ type PaymentCallbackVerifier interface {
 	VerifyAlipayCallback(params map[string]string) (bool, error)
 }
 
+// FailClosedPaymentCallbackVerifier 生产环境下的失败保护实现
+type FailClosedPaymentCallbackVerifier struct{}
+
+// VerifyWeChatCallback 在生产环境下未接入验签时显式失败
+func (v *FailClosedPaymentCallbackVerifier) VerifyWeChatCallback(body []byte, signature string) (bool, error) {
+	return false, ErrPaymentCallbackNotImplemented
+}
+
+// VerifyAlipayCallback 在生产环境下未接入验签时显式失败
+func (v *FailClosedPaymentCallbackVerifier) VerifyAlipayCallback(params map[string]string) (bool, error) {
+	return false, ErrPaymentCallbackNotImplemented
+}
+
 // MockPaymentCallbackVerifier 模拟支付回调验签器 (万能通过)
 type MockPaymentCallbackVerifier struct{}
 
 // VerifyWeChatCallback 模拟验证微信回调
 func (v *MockPaymentCallbackVerifier) VerifyWeChatCallback(body []byte, signature string) (bool, error) {
+	if isProductionEnv() {
+		return false, fmt.Errorf("%w: wechat", ErrPaymentCallbackNotImplemented)
+	}
+
 	// TODO: 生产环境实现真实验签
 	// 参考: https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=4_3
 	return true, nil
@@ -260,6 +312,10 @@ func (v *MockPaymentCallbackVerifier) VerifyWeChatCallback(body []byte, signatur
 
 // VerifyAlipayCallback 模拟验证支付宝回调
 func (v *MockPaymentCallbackVerifier) VerifyAlipayCallback(params map[string]string) (bool, error) {
+	if isProductionEnv() {
+		return false, fmt.Errorf("%w: alipay", ErrPaymentCallbackNotImplemented)
+	}
+
 	// TODO: 生产环境实现真实验签
 	// 参考: https://opendocs.alipay.com/open/270/105902
 	return true, nil
@@ -267,6 +323,10 @@ func (v *MockPaymentCallbackVerifier) VerifyAlipayCallback(params map[string]str
 
 // NewPaymentCallbackVerifier 创建支付回调验签器
 func NewPaymentCallbackVerifier(config *ThirdPartyConfig) PaymentCallbackVerifier {
+	if isProductionEnv() {
+		return &FailClosedPaymentCallbackVerifier{}
+	}
+
 	// TODO: 根据配置返回真实验签器
 	return &MockPaymentCallbackVerifier{}
 }
