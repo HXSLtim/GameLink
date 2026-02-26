@@ -311,7 +311,7 @@ jobs:
         env:
           VITE_API_BASE_URL: /api/v1
           VITE_CRYPTO_ENABLED: 'false'
-        run: npm run build:h5
+        run: npm run build
 
       - name: Check bundle size
         working-directory: app

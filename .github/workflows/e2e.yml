@@ -109,7 +109,7 @@ jobs:
           JWT_SECRET_KEY: test-secret-key-for-e2e-testing-32chars
           API_BASE_URL: http://localhost:8080
         run: |
-          go test -v -tags=e2e ./tests/e2e/... || true
+          go test -v -tags=e2e ./tests/e2e/...
 
       - name: Upload backend logs
         if: always()
@@ -224,12 +224,13 @@ jobs:
 
       - name: Start full stack
         run: |
-          docker-compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml up -d postgres redis
+          docker compose -f docker-compose.dev.yml up -d backend admin
 
           # Wait for all services
           timeout 180 bash -c '
             until curl -s http://localhost:8080/health > /dev/null && \
-                  curl -s http://localhost:5173 > /dev/null; do
+                  curl -s http://localhost > /dev/null; do
               echo "Waiting for services..."
               sleep 3
             done
@@ -238,7 +239,7 @@ jobs:
 
       - name: Run integration scenarios
         run: |
-          ./scripts/test-integration-scenarios.sh || true
+          API_BASE_URL=http://localhost:8080 WEB_BASE_URL=http://localhost bash ./scripts/test-integration-scenarios.sh
 
       - name: Upload logs
         if: always()
@@ -252,7 +253,8 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          docker-compose -f docker-compose.yml down -v
+          docker compose -f docker-compose.dev.yml down -v
+          docker compose -f docker-compose.yml down -v
 
   e2e-summary:
     name: E2E Test Summary

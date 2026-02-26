@@ -113,7 +113,7 @@ jobs:
         working-directory: admin
         run: |
           npm ci
-          npm run test:run || npm test -- --run || true
+          npm run test:run || npm test -- --run
 
   # 构建并推送 Docker 镜像
   build-and-push:

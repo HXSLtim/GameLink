@@ -39,7 +39,7 @@ show_header() {
 declare -A ports=(
     ["5173"]="Admin 前端 (Vite)"
     ["8080"]="后端 API (Go)"
-    ["3000"]="App 前端 (UniApp/Vite)"
+    ["5175"]="User 前端 (React/Vite)"
     ["5433"]="PostgreSQL 数据库"
     ["6380"]="Redis 缓存"
 )
@@ -90,7 +90,7 @@ if [ "$has_conflicts" = true ]; then
     echo "3. 或者修改端口配置："
     echo "   后端: .env 中的 BACKEND_PORT"
     echo "   Admin: admin/vite.config.ts 中的 server.port"
-    echo "   App: app/vite.config.ts 中的 server.port"
+    echo "   User: app/vite.config.ts 中的 server.port"
     echo ""
     echo "4. 重启开发服务器"
     echo ""

@@ -31,7 +31,7 @@ scrape_configs:
   # GameLink API
   - job_name: 'gamelink-api'
     static_configs:
-      - targets: ['host.docker.internal:8080']
+      - targets: ['gamelink-backend:8080']
     metrics_path: '/metrics'
     scrape_interval: 10s
     scheme: http

@@ -17,7 +17,10 @@ param(
     [string]$Environment = "prod-local",
     
     [Parameter(Mandatory=$false)]
-    [string]$BackupDir = ".\backups"
+    [string]$BackupDir = ".\backups",
+
+    [Parameter(Mandatory=$false)]
+    [switch]$IncludeEnvFile
 )
 
 $ErrorActionPreference = "Stop"
@@ -74,8 +77,17 @@ function Backup-GameLink {
     # 备份 Redis
     Write-ColorOutput "`n📦 备份 Redis 数据..." "Cyan"
     try {
+        $redisPassword = [Environment]::GetEnvironmentVariable("REDIS_PASSWORD")
+        if ([string]::IsNullOrWhiteSpace($redisPassword)) {
+            Write-ColorOutput "⚠️  REDIS_PASSWORD 未设置，将尝试无密码备份" "Yellow"
+        }
+
         # 触发 Redis 保存
-        docker exec gamelink-redis redis-cli -a redis123 SAVE 2>&1 | Out-Null
+        if ([string]::IsNullOrWhiteSpace($redisPassword)) {
+            docker exec gamelink-redis redis-cli SAVE 2>&1 | Out-Null
+        } else {
+            docker exec gamelink-redis redis-cli -a $redisPassword SAVE 2>&1 | Out-Null
+        }
         
         # 复制 RDB 文件
         $redisBackupFile = Join-Path $backupPath "redis_dump.rdb"
@@ -91,8 +103,13 @@ function Backup-GameLink {
     # 备份配置文件
     Write-ColorOutput "`n📦 备份配置文件..." "Cyan"
     try {
-        Copy-Item $envFile (Join-Path $backupPath "env_backup.txt")
-        Copy-Item "backend/configs/config.production.yaml" (Join-Path $backupPath "config.yaml") -ErrorAction SilentlyContinue
+        if ($IncludeEnvFile) {
+            Copy-Item $envFile (Join-Path $backupPath "env_backup.txt")
+            Write-ColorOutput "⚠️  已包含环境文件，请确保备份文件加密并限制访问权限" "Yellow"
+        } else {
+            Write-ColorOutput "ℹ️  默认不备份环境文件（避免凭据泄露）。可用 -IncludeEnvFile 显式开启" "Cyan"
+        }
+        Copy-Item "api/configs/config.production.yaml" (Join-Path $backupPath "config.yaml") -ErrorAction SilentlyContinue
         Write-ColorOutput "✅ 配置文件备份完成" "Green"
     }
     catch {
