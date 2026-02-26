@@ -305,7 +305,7 @@ syncConfig := middleware.APISyncConfig{
     GroupFilter: "/api/v1/admin",
     SkipPaths: []string{
         "/api/v1/health",
-        "/api/v1/metrics",
+        "/metrics",
         "/api/v1/swagger",
     },
     DryRun: false,
@@ -410,4 +410,3 @@ swag init -g cmd/user-service/main.go -d ./ -o ./docs
 
 **生成工具**: Claude AI  
 **报告版本**: 1.0
-

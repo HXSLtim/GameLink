@@ -395,7 +395,7 @@ cryptoMiddleware.updateConfig({
   methods: ['POST'],
   excludePaths: [
     '/api/v1/health',
-    '/api/v1/metrics',
+    '/metrics',
     '/api/v1/logs', // 日志接口不加密
   ],
 });

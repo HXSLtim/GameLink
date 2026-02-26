@@ -266,7 +266,7 @@ if os.Getenv("APP_ENV") != "production" || os.Getenv("SYNC_API_PERMISSIONS") == 
     log.Println("同步 API 权限到数据库...")
     syncConfig := middleware.APISyncConfig{
         GroupFilter: "/api/v1/admin",
-        SkipPaths: []string{"/api/v1/health", "/api/v1/metrics", "/api/v1/swagger"},
+        SkipPaths: []string{"/api/v1/health", "/metrics", "/api/v1/swagger"},
         DryRun: false,
     }
     middleware.SyncAPIPermissions(router, permService, syncConfig)
@@ -383,4 +383,3 @@ swag init -g cmd/user-service/main.go -d ./ -o ./docs
 **修复人**: AI Assistant  
 **审核状态**: 待测试验证  
 **文档版本**: v1.0
-
