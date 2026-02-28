@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "type-check": "tsc -b tsconfig.app.json tsconfig.node.json",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "validate:prd": "node ../scripts/validate-prd-docs.mjs",
-    "validate:bizstory": "node ../scripts/validate-business-story-docs.mjs"
+    "validate:bizstory": "node ../scripts/validate-business-story-docs.mjs",
+    "accept:engineer": "node ../scripts/engineering-acceptance.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
