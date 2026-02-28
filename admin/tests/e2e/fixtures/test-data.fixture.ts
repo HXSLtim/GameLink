@@ -36,7 +36,7 @@ export interface AdminTestData {
 // Generate unique test data with timestamp to avoid conflicts
 const generateTestData = (): AdminTestData => {
   // Check for required environment variables
-  const adminPassword = process.env.TEST_ADMIN_PASSWORD;
+  const adminPassword = process.env.TEST_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD;
   if (!adminPassword) {
     console.warn(
       '⚠️ TEST_ADMIN_PASSWORD environment variable not set. ' +
@@ -48,7 +48,7 @@ const generateTestData = (): AdminTestData => {
   return {
     adminUser: {
       username: process.env.TEST_ADMIN_USERNAME || 'admin@gamelink.com',
-      password: adminPassword || 'admin123456', // Default matches docker-compose.yml
+      password: adminPassword || 'Admin123456', // Default matches docker-compose.dev.yml
       email: process.env.TEST_ADMIN_EMAIL || 'admin@gamelink.com',
     },
     testUser: {

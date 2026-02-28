@@ -30,13 +30,13 @@ services:
       - REDIS_PASSWORD=
       - REDIS_DB=0
       # JWT配置
-      - JWT_SECRET_KEY=dev-jwt-secret-key-minimum-32-chars
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret-key-minimum-32-chars}
       - JWT_TOKEN_TTL_HOURS=24
       # 加密配置 (开发环境关闭)
       - CRYPTO_ENABLED=false
       # 超级管理员配置
       - SUPER_ADMIN_EMAIL=admin@gamelink.com
-      - SUPER_ADMIN_PASSWORD=Admin123456
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD:-Admin123456}
       - SUPER_ADMIN_NAME=Super Admin
       # 种子数据
       - SEED_ENABLED=true

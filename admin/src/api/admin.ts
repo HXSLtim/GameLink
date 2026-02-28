@@ -555,7 +555,7 @@ export const adminApi = {
 
     // Menu Management
     getMenus: (params?: { parentId?: number; page?: number; page_size?: number }) => apiClient.get<ApiResponse<Menu[]>>('/admin/menus', { params }),
-    getMyMenus: () => apiClient.get<ApiResponse<Menu[]>>('/admin/menus/me'),
+    getMyMenus: () => apiClient.get<ApiResponse<Menu[]>>('/admin/me/menus'),
     deleteMenu: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/menus/${id}`),
 
     // Role Management

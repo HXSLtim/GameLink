@@ -106,14 +106,6 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 		userhandler.RegisterVoiceRoutes(userGroup, services.trtcSvc, authMiddleware)
 	}
 
-	// 兼容旧版前端路径：/users/*
-	legacyUsersGroup := api.Group("/users")
-	legacyUsersGroup.Use(authMiddleware)
-	{
-		userhandler.RegisterChatRoutes(legacyUsersGroup, services.chatSvc, authMiddleware)
-		userhandler.RegisterProfileRoutes(legacyUsersGroup, services.userRepo, authMiddleware)
-	}
-
 	// 上传相关路由（注册在 /api/v1 下）
 	if services.uploadSvc != nil {
 		userhandler.RegisterUploadRoutes(api, authMiddleware, services.uploadSvc)

@@ -144,7 +144,6 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 // @Tags         Admin - Menus
 // @Security     BearerAuth
 // @Success      200  {array}   model.Menu
-// @Router       /admin/menus/me [get]
 // @Router       /admin/me/menus [get]
 func (h *MenuHandler) ListMyMenus(c *gin.Context) {
 	userIDVal, ok := c.Get(middleware.UserIDKey)

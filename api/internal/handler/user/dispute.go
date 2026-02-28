@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -33,22 +32,6 @@ type InitiateDisputePayload struct {
 // InitiateDisputeResponse represents the response for initiating a dispute
 type InitiateDisputeResponse = orderservice.InitiateDisputeResponse
 
-type refundPayload struct {
-	Reason       string   `json:"reason" binding:"required,max=255"`
-	Description  string   `json:"description" binding:"max=2000"`
-	EvidenceURLs []string `json:"evidenceUrls" binding:"max=9"`
-}
-
-type refundStatusResponse struct {
-	ID           uint64 `json:"id"`
-	Status       string `json:"status"`
-	Reason       string `json:"reason"`
-	Amount       int64  `json:"amount"`
-	CreatedAt    string `json:"createdAt"`
-	ProcessedAt  string `json:"processedAt,omitempty"`
-	RejectReason string `json:"rejectReason,omitempty"`
-}
-
 // RegisterDisputeRoutes 注册用户端订单争议路由
 func RegisterDisputeRoutes(router gin.IRouter, svc *orderservice.DisputeService, authMiddleware gin.HandlerFunc) {
 	h := NewDisputeHandler(svc)
@@ -56,8 +39,6 @@ func RegisterDisputeRoutes(router gin.IRouter, svc *orderservice.DisputeService,
 	group.Use(authMiddleware)
 	group.POST("/:id/dispute", h.InitiateDispute)
 	group.GET("/:id/disputes", h.GetDisputeDetail)
-	group.POST("/:id/refund", h.RequestRefund)
-	group.GET("/:id/refund", h.GetRefundStatus)
 }
 
 // InitiateDispute creates a new dispute for an order
@@ -204,160 +185,4 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 	}
 
 	respondSuccess(c, "OK", dispute)
-}
-
-// RequestRefund creates a refund request for an order (compat endpoint).
-// @Summary      Request Refund
-// @Description  用户申请退款（兼容接口，底层发起订单纠纷）
-// @Tags         User - Orders
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Param        id       path  uint64         true  "订单ID"
-// @Param        request  body  refundPayload  true  "退款申请信息"
-// @Success      200      {object} map[string]interface{}
-// @Failure      400      {object} apierr.APIError
-// @Failure      401      {object} apierr.APIError
-// @Failure      404      {object} apierr.APIError
-// @Failure      409      {object} apierr.APIError
-// @Failure      500      {object} apierr.APIError
-// @Router       /user/orders/{id}/refund [post]
-func (h *DisputeHandler) RequestRefund(c *gin.Context) {
-	userID := getUserIDFromContext(c)
-	if userID == 0 {
-		respondAPIError(c, apierr.Unauthorized("用户ID不在上下文中"))
-		return
-	}
-
-	orderID, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
-		return
-	}
-
-	var payload refundPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
-		return
-	}
-	if len(payload.EvidenceURLs) > 9 {
-		respondAPIError(c, apierr.BadRequest("最多允许上传9个证据链接"))
-		return
-	}
-
-	resp, err := h.svc.InitiateDispute(c.Request.Context(), orderservice.InitiateDisputeRequest{
-		OrderID:       orderID,
-		InitiatorID:   userID,
-		InitiatorType: model.DisputeInitiatorUser,
-		Type:          model.DisputeTypeServiceQuality,
-		Reason:        payload.Reason,
-		EvidenceText:  payload.Description,
-		EvidenceURLs:  payload.EvidenceURLs,
-	})
-	if err != nil {
-		switch {
-		case errors.Is(err, orderservice.ErrDisputeValidation):
-			respondAPIError(c, apierr.BadRequest(err.Error()))
-		case errors.Is(err, orderservice.ErrCannotInitiateDispute):
-			respondAPIError(c, apierr.Conflict("当前订单状态不能申请退款"))
-		case errors.Is(err, orderservice.ErrDisputeExists):
-			respondAPIError(c, apierr.Conflict("该订单已提交退款/争议申请"))
-		case errors.Is(err, orderservice.ErrOrderNotFound):
-			respondAPIError(c, apierr.NotFound("订单不存在"))
-		default:
-			respondAPIError(c, apierr.InternalError("申请退款失败").WithDetails(err.Error()))
-		}
-		return
-	}
-
-	respondSuccess(c, "退款申请已提交", gin.H{
-		"id":          resp.DisputeID,
-		"status":      "pending",
-		"reason":      payload.Reason,
-		"createdAt":   nowRFC3339(),
-		"traceId":     resp.TraceID,
-		"slaDeadline": resp.SLADeadline,
-	})
-}
-
-// GetRefundStatus returns refund request status for an order (compat endpoint).
-// @Summary      Get Refund Status
-// @Description  查询订单退款申请状态（兼容接口）
-// @Tags         User - Orders
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Param        id   path  uint64  true  "订单ID"
-// @Success      200  {object} refundStatusResponse
-// @Failure      400  {object} apierr.APIError
-// @Failure      401  {object} apierr.APIError
-// @Failure      404  {object} apierr.APIError
-// @Failure      500  {object} apierr.APIError
-// @Router       /user/orders/{id}/refund [get]
-func (h *DisputeHandler) GetRefundStatus(c *gin.Context) {
-	userID := getUserIDFromContext(c)
-	if userID == 0 {
-		respondAPIError(c, apierr.Unauthorized("用户ID不在上下文中"))
-		return
-	}
-
-	orderID, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
-		return
-	}
-
-	dispute, err := h.svc.GetDisputeByOrderID(c.Request.Context(), orderID)
-	if err != nil {
-		if errors.Is(err, orderservice.ErrDisputeNotFound) {
-			respondAPIError(c, apierr.NotFound("退款申请不存在"))
-			return
-		}
-		respondAPIError(c, apierr.InternalError("获取退款状态失败").WithDetails(err.Error()))
-		return
-	}
-
-	if dispute.InitiatorID != userID {
-		respondAPIError(c, apierr.Forbidden("您只能查看自己的退款申请"))
-		return
-	}
-
-	status := mapDisputeStatusToRefundStatus(dispute)
-	resp := refundStatusResponse{
-		ID:        dispute.ID,
-		Status:    status,
-		Reason:    dispute.Reason,
-		Amount:    0,
-		CreatedAt: dispute.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
-	if dispute.ResolvedAt != nil {
-		resp.ProcessedAt = dispute.ResolvedAt.Format("2006-01-02T15:04:05Z07:00")
-	}
-	if status == "rejected" {
-		resp.RejectReason = dispute.ResolveRemark
-	}
-
-	respondSuccess(c, "OK", resp)
-}
-
-func mapDisputeStatusToRefundStatus(dispute *model.OrderDispute) string {
-	switch dispute.Status {
-	case model.DisputeStatusPending:
-		return "pending"
-	case model.DisputeStatusAssigned, model.DisputeStatusMediating:
-		return "processing"
-	case model.DisputeStatusResolved:
-		if dispute.Resolution == model.ResolutionRefund || dispute.Resolution == model.ResolutionPartial {
-			return "refunded"
-		}
-		return "rejected"
-	case model.DisputeStatusRejected, model.DisputeStatusCanceled:
-		return "rejected"
-	default:
-		return "pending"
-	}
-}
-
-func nowRFC3339() string {
-	return time.Now().Format("2006-01-02T15:04:05Z07:00")
 }

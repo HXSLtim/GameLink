@@ -463,7 +463,6 @@ func (h *PermissionHandler) GetPermissionTreeByGroup(c *gin.Context) {
 // @Tags         Admin - Permissions
 // @Security     BearerAuth
 // @Success      200  {array}   string
-// @Router       /admin/permissions/me [get]
 // @Router       /admin/me/permissions [get]
 func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
 	userIDVal, ok := c.Get(middleware.UserIDKey)
@@ -554,37 +553,4 @@ func (h *PermissionHandler) BatchDeletePermissions(c *gin.Context) {
 	}
 
 	respondSuccess(c, result)
-}
-
-// BatchDelete 批量删除权限（旧接口，保留兼容性）
-// @Summary      批量删除权限（旧接口）
-// @Description  批量删除多个权限（系统权限不可删除，被引用的权限需要先解除引用或使用force参数），返回成功和失败的数量
-// @Tags         Admin - Permissions
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string                          true  "Bearer {token}"
-// @Param        force          query     bool                            false "强制删除（忽略引用检查）"
-// @Param        request        body      BatchDeletePermissionsRequest    true  "批量删除权限请求"
-// @Success      200            {object}  permissionservice.PermissionBatchDeleteResult
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      500            {object}  model.ErrorResponse
-// @Router       /admin/permissions/batch [delete]
-func (h *PermissionHandler) BatchDelete(c *gin.Context) {
-	var req BatchDeletePermissionsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondBadRequest(c, "参数验证失败: "+err.Error())
-		return
-	}
-
-	// 检查是否强制删除
-	force := c.Query("force") == "true"
-
-	result, err := h.permissionSvc.BatchDeletePermissions(c.Request.Context(), req.PermissionIDs, force)
-	if err != nil {
-		respondError(c, err)
-		return
-	}
-
-	respondSuccessWithMsg(c, "批量权限删除完成", result)
 }

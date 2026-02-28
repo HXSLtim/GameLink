@@ -166,10 +166,8 @@ function Invoke-SmokeChecks {
     @{ Name = "user/settings"; Method = "GET"; Path = "/user/settings"; Token = $user.Token },
     @{ Name = "user/notification-settings"; Method = "GET"; Path = "/user/notification-settings"; Token = $user.Token },
     @{ Name = "user/customer-service/session"; Method = "GET"; Path = "/user/customer-service/session"; Token = $user.Token },
-    @{ Name = "player/orders (compat)"; Method = "GET"; Path = "/player/orders?page=1&page_size=10"; Token = $player.Token },
+    @{ Name = "player/orders/my"; Method = "GET"; Path = "/player/orders/my?page=1&page_size=10"; Token = $player.Token },
     @{ Name = "player/certification/identity"; Method = "GET"; Path = "/player/certification/identity"; Token = $player.Token },
-    @{ Name = "users/me (legacy)"; Method = "GET"; Path = "/users/me"; Token = $admin.Token },
-    @{ Name = "users/chat/groups (legacy)"; Method = "GET"; Path = "/users/chat/groups?page=1&page_size=10"; Token = $admin.Token },
     @{ Name = "user/chat/groups"; Method = "GET"; Path = "/user/chat/groups?page=1&page_size=10"; Token = $admin.Token },
     @{ Name = "admin/stats/dashboard"; Method = "GET"; Path = "/admin/stats/dashboard"; Token = $admin.Token }
   )

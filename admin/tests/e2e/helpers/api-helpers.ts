@@ -34,7 +34,7 @@ export async function getAdminToken(): Promise<string> {
     return cachedToken;
   }
 
-  const adminPassword = process.env.TEST_ADMIN_PASSWORD;
+  const adminPassword = process.env.TEST_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD;
   if (!adminPassword) {
     console.warn(
       '⚠️ TEST_ADMIN_PASSWORD environment variable not set. ' +
@@ -52,7 +52,7 @@ export async function getAdminToken(): Promise<string> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: process.env.TEST_ADMIN_USERNAME || 'admin@gamelink.com',
-          password: adminPassword || 'admin123456',
+          password: adminPassword || 'Admin123456',
         }),
       });
 

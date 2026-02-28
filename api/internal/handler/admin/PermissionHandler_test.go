@@ -105,14 +105,13 @@ func (ctx *PermissionTestContext) RegisterPermissionRoutes() {
 		group.GET("/groups", ctx.Handler.GetPermissionGroups)
 		group.GET("/tree", ctx.Handler.GetPermissionTree)
 		group.GET("/tree/grouped", ctx.Handler.GetPermissionTreeByGroup)
-		group.GET("/me", ctx.Handler.GetCurrentUserPermissions)
 		group.POST("/batch/delete", ctx.Handler.BatchDeletePermissions)
-		group.DELETE("/batch", ctx.Handler.BatchDelete)
 		group.GET("/:id", ctx.Handler.GetPermission)
 		group.PUT("/:id", ctx.Handler.UpdatePermission)
 		group.PATCH("/:id", ctx.Handler.PatchPermission)
 		group.DELETE("/:id", ctx.Handler.DeletePermission)
 	}
+	ctx.Router.GET("/admin/me/permissions", ctx.Handler.GetCurrentUserPermissions)
 
 	// Role permissions routes
 	ctx.Router.GET("/admin/roles/:id/permissions", ctx.Handler.GetRolePermissions)
@@ -636,7 +635,7 @@ func TestPermissionHandler_GetCurrentUserPermissions_SuperAdmin(t *testing.T) {
 	ctx := SetupPermissionTest(t)
 	ctx.RegisterPermissionRoutes()
 
-	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "GET", "/admin/permissions/me", ctx.AdminToken, nil)
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "GET", "/admin/me/permissions", ctx.AdminToken, nil)
 	testutil.AssertSuccess(t, w)
 
 	var response map[string]interface{}
@@ -661,7 +660,7 @@ func TestPermissionHandler_GetCurrentUserPermissions_RegularUser(t *testing.T) {
 	integration.AssignPermissionToRole(t, ctx.DB, role.ID, permission.ID)
 	integration.AssignRoleToUser(t, ctx.DB, regularUser.ID, role.ID)
 
-	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "GET", "/admin/permissions/me", regularToken, nil)
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "GET", "/admin/me/permissions", regularToken, nil)
 	testutil.AssertSuccess(t, w)
 
 	var response map[string]interface{}
@@ -820,42 +819,4 @@ func TestPermissionHandler_BatchDeletePermissions_PartialFailure(t *testing.T) {
 	data := response["data"].(map[string]interface{})
 	assert.Equal(t, float64(1), data["deleted"])
 	assert.Equal(t, float64(1), data["failed"])
-}
-
-// ============================================================================
-// BatchDelete (Legacy) Tests
-// ============================================================================
-
-func TestPermissionHandler_BatchDelete_Success(t *testing.T) {
-	ctx := SetupPermissionTest(t)
-	ctx.RegisterPermissionRoutes()
-
-	var permissionIDs []uint64
-	for i := 0; i < 3; i++ {
-		perm := ctx.CreateTestPermission(t, model.HTTPMethodGET, fmt.Sprintf("/api/test%d", i), fmt.Sprintf("test.read%d", i))
-		permissionIDs = append(permissionIDs, perm.ID)
-	}
-
-	payload := map[string]interface{}{
-		"permission_ids": permissionIDs,
-	}
-
-	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "DELETE", "/admin/permissions/batch", ctx.AdminToken, payload)
-	testutil.AssertSuccess(t, w)
-}
-
-func TestPermissionHandler_BatchDelete_WithForce(t *testing.T) {
-	ctx := SetupPermissionTest(t)
-	ctx.RegisterPermissionRoutes()
-
-	perm := ctx.CreateTestPermission(t, model.HTTPMethodGET, "/api/test", "test.read")
-	role := integration.CreateTestRole(t, ctx.DB, "test-role", "Test Role")
-	integration.AssignPermissionToRole(t, ctx.DB, role.ID, perm.ID)
-
-	payload := map[string]interface{}{
-		"permission_ids": []uint64{perm.ID},
-	}
-
-	w := testutil.MakeRequest(t, ctx.Router, "DELETE", "/admin/permissions/batch?force=true", payload, testutil.WithAuth(ctx.AdminToken))
-	testutil.AssertSuccess(t, w)
 }

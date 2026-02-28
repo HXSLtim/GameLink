@@ -144,7 +144,6 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 func RegisterProfileRoutes(rg *gin.RouterGroup, userRepo repository.UserRepository, _ gin.HandlerFunc) {
 	h := NewProfileHandler(userRepo)
 
-	rg.GET("/me", h.GetProfile) // 兼容历史路径
 	rg.GET("/profile", h.GetProfile)
 	rg.PUT("/profile", h.UpdateProfile)
 }

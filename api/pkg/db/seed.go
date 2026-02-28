@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -190,8 +191,13 @@ END $$;`
 
 		now := time.Now()
 
+		superAdminSeedPassword := strings.TrimSpace(os.Getenv("SUPER_ADMIN_PASSWORD"))
+		if superAdminSeedPassword == "" {
+			superAdminSeedPassword = "Admin123456"
+		}
+
 		userInputs := []seedUserInput{
-			{Key: "superAdminA", Email: "admin@gamelink.com", Phone: "13800138101", Name: "超级管理员", Role: model.RoleAdmin, Password: "Admin123456"},
+			{Key: "superAdminA", Email: "admin@gamelink.com", Phone: "13800138101", Name: "超级管理员", Role: model.RoleAdmin, Password: superAdminSeedPassword},
 			{Key: "customerA", Email: "demo.user@gamelink.com", Phone: "13800138000", Name: "测试用户", Role: model.RoleUser, Password: "User@123456"},
 			{Key: "proA", Email: "pro.player@gamelink.com", Phone: "13800138001", Name: "职业陪玩", Role: model.RolePlayer, Password: "Player@123456"},
 			{Key: "customerB", Email: "vip.user@gamelink.com", Phone: "13800138002", Name: "高级会员", Role: model.RoleUser, Password: "Vip@123456"},

@@ -318,7 +318,6 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminse
 		rbacGroup.PUT("/roles/batch/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/roles/batch/permissions"), roleHandler.BatchAssignPermissionsToRoles)
 
 		// 权限管理
-		rbacGroup.GET("/permissions/me", permHandler.GetCurrentUserPermissions) // 保留旧路径兼容性
 		rbacGroup.GET("/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions"), permHandler.ListPermissions)
 		rbacGroup.GET("/permissions/groups", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions/groups"), permHandler.GetPermissionGroups)
 		rbacGroup.GET("/permissions/tree", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions/tree"), permHandler.GetPermissionTree)
@@ -332,10 +331,8 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminse
 		rbacGroup.GET("/users/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/permissions"), permHandler.GetUserPermissions)
 		// 批量权限操作 API
 		rbacGroup.POST("/permissions/batch/delete", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/permissions/batch/delete"), permHandler.BatchDeletePermissions)
-		rbacGroup.DELETE("/permissions/batch", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/permissions/batch"), permHandler.BatchDelete)
 
 		// 菜单管理（动态路由配置）
-		rbacGroup.GET("/menus/me", menuHandler.ListMyMenus) // 保留旧路径兼容性
 		rbacGroup.GET("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus"), menuHandler.List)
 		rbacGroup.POST("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus"), menuHandler.Create)
 		rbacGroup.GET("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus/:id"), menuHandler.Get)

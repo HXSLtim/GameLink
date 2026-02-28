@@ -50,7 +50,7 @@ func setupMenuTest(t *testing.T) (*gin.Engine, *MenuHandler, *gorm.DB) {
 	router.POST("/admin/menus", handler.Create)
 	router.PUT("/admin/menus/:id", handler.Update)
 	router.DELETE("/admin/menus/:id", handler.Delete)
-	router.GET("/admin/menus/me", handler.ListMyMenus)
+	router.GET("/admin/me/menus", handler.ListMyMenus)
 	router.DELETE("/admin/menus/batch", handler.BatchDelete)
 	router.PUT("/admin/menus/batch/status", handler.BatchUpdateStatus)
 	router.PUT("/admin/menus/batch/sort", handler.BatchUpdateSort)
@@ -445,13 +445,13 @@ func TestMenuHandler_ListMyMenus(t *testing.T) {
 	// Setup context with user ID
 	gin.SetMode(gin.TestMode)
 	testRouter := gin.New()
-	testRouter.GET("/admin/menus/me", func(c *gin.Context) {
+	testRouter.GET("/admin/me/menus", func(c *gin.Context) {
 		c.Set("userID", uint64(user.ID))
 		c.Set("userRole", string(model.RoleAdmin))
 		handler.ListMyMenus(c)
 	})
 
-	req, _ := http.NewRequest("GET", "/admin/menus/me", nil)
+	req, _ := http.NewRequest("GET", "/admin/me/menus", nil)
 	w := httptest.NewRecorder()
 	testRouter.ServeHTTP(w, req)
 

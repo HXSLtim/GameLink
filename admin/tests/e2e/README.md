@@ -35,7 +35,7 @@ tests/e2e/
 ## Prerequisites
 
 1. **Backend API** running on `http://localhost:8080`
-2. **Admin user** credentials available for login (建议使用项目初始化的超管账号，例如本地 `docker-compose.yml` 默认 `admin@gamelink.com / admin123456`)
+2. **Admin user** credentials available for login (建议使用项目初始化的超管账号，例如本地 `docker-compose.dev.yml` 默认 `admin@gamelink.com / Admin123456`)
 3. **PostgreSQL** database available (E2E 会通过 API 创建/清理测试数据)
 
 ## Environment Variables
@@ -45,7 +45,7 @@ Create a `.env` file in the `admin/` directory:
 ```bash
 # Admin credentials for E2E tests
 TEST_ADMIN_USERNAME=admin@gamelink.com
-TEST_ADMIN_PASSWORD=admin123456
+TEST_ADMIN_PASSWORD=Admin123456
 TEST_ADMIN_EMAIL=admin@gamelink.com
 
 # API URL (default: http://localhost:8080/api/v1)
@@ -55,7 +55,7 @@ API_URL=http://localhost:8080/api/v1
 BASE_URL=http://localhost:5173
 ```
 
-> 说明：如果不设置 `TEST_ADMIN_USERNAME/TEST_ADMIN_PASSWORD`，测试代码会使用默认值 `admin/admin123`（见 `admin/tests/e2e/helpers/api-helpers.ts`），这在你的本地环境里可能并不存在，建议始终显式配置。
+> 说明：如果不设置 `TEST_ADMIN_USERNAME/TEST_ADMIN_PASSWORD`，测试代码会回退为 `admin@gamelink.com / Admin123456`（见 `admin/tests/e2e/helpers/api-helpers.ts`），这在你的本地环境里可能并不存在，建议始终显式配置。
 
 ## Installation
 
