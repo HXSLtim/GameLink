@@ -65,6 +65,14 @@ export function DashboardPage(): ReactElement {
           发起微信支付
         </Button>
       </div>
+      <div className="flex flex-wrap gap-3">
+        <Button variant="outline" onClick={() => navigate("/players")}>陪玩师列表</Button>
+        <Button variant="outline" onClick={() => navigate("/orders")}>我的订单</Button>
+        <Button variant="outline" onClick={() => navigate("/chat")}>聊天会话</Button>
+        <Button variant="outline" onClick={() => navigate("/wallet")}>我的钱包</Button>
+        <Button variant="outline" onClick={() => navigate("/reviews")}>我的评价</Button>
+        <Button variant="outline" onClick={() => navigate("/profile")}>个人中心</Button>
+      </div>
       <p className="m-0 text-sm text-slate-700">状态：{status}</p>
     </section>
   )
