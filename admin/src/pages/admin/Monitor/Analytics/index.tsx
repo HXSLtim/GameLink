@@ -403,7 +403,7 @@ const AnalyticsPage: React.FC = () => {
                     <YAxis stroke={token.colorTextSecondary} />
                     <Tooltip
                       contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                      formatter={(value: number) => [`¥${value.toFixed(2)}`, '收入']}
+                      formatter={(value) => [`¥${Number(value ?? 0).toFixed(2)}`, '收入']}
                     />
                     <Bar
                       dataKey="value"
@@ -428,9 +428,9 @@ const AnalyticsPage: React.FC = () => {
                   <FunnelChart>
                     <Tooltip
                       contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                      formatter={(value: number, name: string, props: { payload?: { rate?: number } }) => [
-                        `${value} (${props.payload?.rate?.toFixed(1) || 0}%)`,
-                        name,
+                      formatter={(value, name, props) => [
+                        `${Number(value ?? 0)} (${Number(props?.payload?.rate ?? 0).toFixed(1)}%)`,
+                        String(name),
                       ]}
                     />
                     <Funnel

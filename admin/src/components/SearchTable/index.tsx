@@ -115,7 +115,14 @@ export function SearchTable<T extends object>({
 }: SearchTableProps<T>) {
     const [internalForm] = Form.useForm();
     const form = externalForm || internalForm;
-    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+    const [internalSelectedRowKeys, setInternalSelectedRowKeys] = useState<React.Key[]>([]);
+
+    const selectedRowKeys = useMemo(() => {
+        if (rowSelection && Array.isArray(rowSelection.selectedRowKeys)) {
+            return rowSelection.selectedRowKeys as React.Key[];
+        }
+        return internalSelectedRowKeys;
+    }, [rowSelection, internalSelectedRowKeys]);
 
     // 搜索
     const handleSearch = useCallback(() => {
@@ -142,7 +149,7 @@ export function SearchTable<T extends object>({
         }
         try {
             await onBatchDelete?.(selectedRowKeys);
-            setSelectedRowKeys([]);
+            setInternalSelectedRowKeys([]);
             message.success('删除成功');
         } catch {
             message.error('删除失败');
@@ -154,12 +161,12 @@ export function SearchTable<T extends object>({
         if (rowSelection !== undefined) return rowSelection;
         if (showBatchDelete) {
             return {
-                selectedRowKeys,
-                onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+                selectedRowKeys: internalSelectedRowKeys,
+                onChange: (keys: React.Key[]) => setInternalSelectedRowKeys(keys),
             };
         }
         return undefined;
-    }, [rowSelection, showBatchDelete, selectedRowKeys]);
+    }, [rowSelection, showBatchDelete, internalSelectedRowKeys]);
 
     // 搜索表单回车提交
     useEffect(() => {
@@ -260,7 +267,7 @@ export function SearchTable<T extends object>({
                             )}
 
                             {/* 自定义工具栏按钮 */}
-                            {toolbarButtons.map(renderToolbarButton)}
+                            {toolbarButtons.filter(btn => !btn.simpleAction).map(renderToolbarButton)}
 
                             {/* 简单批量操作（有选中时显示） */}
                             {toolbarButtons.filter(btn => btn.simpleAction).map((btn, idx) => {

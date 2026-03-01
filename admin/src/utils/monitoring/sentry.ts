@@ -8,8 +8,9 @@
  */
 
 import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
-import type { ErrorContext, Breadcrumb } from '@sentry/types';
+import type { Breadcrumb, ErrorEvent, EventHint } from '@sentry/react';
+
+type ErrorContext = Record<string, unknown>;
 
 /**
  * Sentry configuration options
@@ -28,7 +29,7 @@ export interface SentryConfig {
   /** Application name */
   appName?: string;
   /** Before send callback for error filtering */
-  beforeSend?: (event: Sentry.ErrorEvent, hint: Sentry.EventHint) => Sentry.ErrorEvent | null;
+  beforeSend?: (event: ErrorEvent, hint: EventHint) => ErrorEvent | null;
   /** Before breadcrumb callback */
   beforeBreadcrumb?: (breadcrumb: Breadcrumb) => Breadcrumb | null;
 }
@@ -69,7 +70,7 @@ export function initSentry(config: SentryConfig): void {
       sampleRate: config.sampleRate ?? 1.0,
       tracesSampleRate: config.tracesSampleRate ?? 0.1,
       release: config.release ?? import.meta.env.VITE_APP_VERSION,
-      integrations: [new BrowserTracing()],
+      integrations: [Sentry.browserTracingIntegration()],
       beforeSend: config.beforeSend,
       beforeBreadcrumb: config.beforeBreadcrumb,
 

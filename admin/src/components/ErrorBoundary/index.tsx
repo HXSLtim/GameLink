@@ -7,11 +7,20 @@ import { captureException, addBreadcrumb } from '@/utils/monitoring';
 
 const { Paragraph, Text } = Typography;
 
+function toError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(String(error));
+}
+
 /**
  * 错误回退 UI 组件
  */
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   const isDev = import.meta.env.DEV;
+  const normalizedError = toError(error);
 
   const handleGoHome = () => {
     window.location.href = '/admin';
@@ -69,10 +78,10 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
             </Paragraph>
             <Paragraph>
               <Text type="danger" code>
-                {error.name}: {error.message}
+                {normalizedError.name}: {normalizedError.message}
               </Text>
             </Paragraph>
-            {error.stack && (
+            {normalizedError.stack && (
               <Paragraph>
                 <pre
                   style={{
@@ -85,7 +94,7 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
                     margin: 0,
                   }}
                 >
-                  {error.stack}
+                  {normalizedError.stack}
                 </pre>
               </Paragraph>
             )}
@@ -151,8 +160,9 @@ export function ErrorBoundary({ children, fallback, onError, onReset }: Props) {
     <ReactErrorBoundary
       FallbackComponent={fallback ? () => <>{fallback}</> : ErrorFallback}
       onError={(error, info) => {
-        logError(error, info);
-        onError?.(error, info);
+        const normalizedError = toError(error);
+        logError(normalizedError, info);
+        onError?.(normalizedError, info);
       }}
       onReset={onReset}
     >

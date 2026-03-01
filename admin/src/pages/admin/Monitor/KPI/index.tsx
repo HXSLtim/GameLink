@@ -464,9 +464,10 @@ const KPIDashboard: React.FC = () => {
                             backgroundColor: token.colorBgElevated,
                             borderColor: token.colorBorder,
                           }}
-                          formatter={(value: number, name: string) => {
+                          formatter={(value, name) => {
                             const config = METRIC_CONFIG[selectedMetric];
-                            let formatted = value.toLocaleString();
+                            const numericValue = Number(value ?? 0);
+                            let formatted = numericValue.toLocaleString();
                             if (config?.unit === '¥') formatted = `¥${formatted}`;
                             if (config?.unit === '%') formatted = `${formatted}%`;
                             return [formatted, name === 'value' ? '实际值' : '目标值'];

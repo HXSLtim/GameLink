@@ -28,7 +28,7 @@ import {
     UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@/components';
-import { SearchFilters } from '@/components/common/SearchFilters';
+import SearchFilters from '@/components/common/SearchFilters';
 import BatchActions from '@/components/common/BatchActions';
 import { adminApi } from '@/api/admin';
 import type { BatchRoleDto, BatchStatusDto, BatchPointsDto, BatchNotificationDto } from '@/api/admin';

@@ -142,14 +142,3 @@ export const reconciliationApi = {
     executeReconciliation: (id: number, data: ExecuteReconciliationDto) =>
         apiClient.post<ApiResponse<Reconciliation>>(`/admin/reconciliations/${id}/execute`, data),
 };
-
-// Re-export types for convenience
-export type {
-    Reconciliation,
-    ReconciliationDetail,
-    ReconciliationListParams,
-    CreateReconciliationDto,
-    CreateReconciliationDetailDto,
-    ExecuteReconciliationDto,
-    ReconciliationStats,
-};
