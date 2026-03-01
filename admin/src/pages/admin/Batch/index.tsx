@@ -12,13 +12,11 @@ import {
     message,
     Space,
     Typography,
-    Divider,
     Alert,
     Radio,
     InputNumber,
     Row,
     Col,
-    Statistic,
 } from 'antd';
 import {
     SendOutlined,
@@ -33,14 +31,13 @@ import { PageContainer } from '@/components';
 import { SearchFilters } from '@/components/common/SearchFilters';
 import BatchActions from '@/components/common/BatchActions';
 import { adminApi } from '@/api/admin';
-import type { BatchRoleDto, BatchStatusDto, BatchPointsDto, BatchNotificationDto, User } from '@/api/admin';
+import type { BatchRoleDto, BatchStatusDto, BatchPointsDto, BatchNotificationDto } from '@/api/admin';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { logger } from '@/utils/logger';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
-const { Option } = Select;
 
 /**
  * 角色选项

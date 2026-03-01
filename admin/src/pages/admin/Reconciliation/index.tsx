@@ -6,7 +6,6 @@ import {
     Tag,
     Space,
     Button,
-    Modal,
     message,
     Card,
     Statistic,
@@ -15,12 +14,9 @@ import {
     Drawer,
     Descriptions,
     Table,
-    Row,
-    Col,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
-    EditOutlined,
     CheckOutlined,
     CloseOutlined,
     EyeOutlined,
@@ -31,6 +27,7 @@ import {
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
+import { AmountDisplay } from '@/components/AmountDisplay';
 import { reconciliationApi } from '@/api/reconciliation';
 import type {
     Reconciliation,
@@ -39,12 +36,18 @@ import type {
     ReconciliationDetail,
     ReconciliationListParams,
 } from '@/api/reconciliation';
+import {
+    RECONCILIATION_STATUS_TEXT,
+    RECONCILIATION_STATUS_COLOR,
+    RECONCILIATION_TYPE_TEXT,
+    RECONCILIATION_TYPE_COLOR,
+} from '@/types/reconciliation';
 import dayjs from 'dayjs';
 
 import { logger } from '@/utils/logger';
 
 /**
- * 对账类型映射
+ * 对账类型映射（兼容旧代码，建议使用 RECONCILIATION_TYPE_*.tsx）
  */
 const reconciliationTypeMap: Record<ReconciliationType, { text: string; color: string }> = {
     payment: { text: '支付对账', color: 'blue' },
@@ -267,14 +270,14 @@ const ReconciliationPage: React.FC = () => {
             key: 'differenceAmount',
             width: 120,
             align: 'right',
-            render: (amount: number) => {
-                const color = amount > 0 ? '#ff4d4f' : amount < 0 ? '#52c41a' : undefined;
-                return (
-                    <span style={{ color, fontFamily: 'monospace' }}>
-                        {(amount / 100).toFixed(2)}
-                    </span>
-                );
-            },
+            render: (amount: number) => (
+                <AmountDisplay
+                    value={amount}
+                    type={amount > 0 ? 'expense' : amount < 0 ? 'income' : 'default'}
+                    showCurrency={false}
+                    showSign
+                />
+            ),
         },
         {
             title: '摘要',
@@ -373,7 +376,7 @@ const ReconciliationPage: React.FC = () => {
             key: 'externalAmount',
             width: 120,
             align: 'right',
-            render: (amount: number) => `¥${(amount / 100).toFixed(2)}`,
+            render: (amount: number) => <AmountDisplay value={amount} />,
         },
         {
             title: '内部单号',
@@ -395,7 +398,7 @@ const ReconciliationPage: React.FC = () => {
             key: 'internalAmount',
             width: 120,
             align: 'right',
-            render: (amount: number) => `¥${(amount / 100).toFixed(2)}`,
+            render: (amount: number) => <AmountDisplay value={amount} />,
         },
         {
             title: '差异',
@@ -403,14 +406,15 @@ const ReconciliationPage: React.FC = () => {
             key: 'differenceAmount',
             width: 100,
             align: 'right',
-            render: (amount: number) => {
-                const color = amount > 0 ? '#ff4d4f' : amount < 0 ? '#52c41a' : undefined;
-                return (
-                    <span style={{ color, fontFamily: 'monospace', fontWeight: 600 }}>
-                        {amount > 0 ? '+' : ''}{(amount / 100).toFixed(2)}
-                    </span>
-                );
-            },
+            render: (amount: number) => (
+                <AmountDisplay
+                    value={amount}
+                    type={amount > 0 ? 'expense' : amount < 0 ? 'income' : 'default'}
+                    showCurrency={false}
+                    showSign
+                    size="default"
+                />
+            ),
         },
         {
             title: '状态',

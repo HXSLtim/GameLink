@@ -28,7 +28,6 @@ import {
     Drawer,
     Descriptions,
     Typography,
-    Divider,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -37,7 +36,6 @@ import {
     DeleteOutlined,
     EyeOutlined,
     UserOutlined,
-    ReloadOutlined,
     ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
@@ -48,7 +46,6 @@ import type {
     UserBlockQueryParams,
     UserBlockStats,
     BlockStatus,
-    BlockUserType,
 } from '@/types/userBlock';
 import {
     BLOCK_STATUS_TEXT,
