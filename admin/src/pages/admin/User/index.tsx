@@ -41,7 +41,9 @@ import { PageContainer, SearchTable, type ToolbarButton, ImportModal } from '@/c
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse, type LoginHistory, type AuditLog, type BatchNotificationDto, type BatchPointsDto } from '@/api/admin';
+import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse, type LoginHistory, type AuditLog } from '@/api/admin';
+import { userBatchService } from '@/services/user';
+import type { BatchNotificationRequest, BatchPointsRequest, BatchRoleRequest, BatchStatusRequest, UserRole } from '@/types/user';
 import { Table } from 'antd';
 import dayjs from 'dayjs';
 import { logger } from '@/utils/logger';
@@ -68,16 +70,16 @@ type BatchNotificationFormValues = {
     target: 'users' | 'role' | 'all';
     title: string;
     content: string;
-    type: BatchNotificationDto['type'];
-    roles?: string[];
+    type: BatchNotificationRequest['type'];
+    roles?: UserRole[];
 };
 
 type BatchPointsFormValues = {
     target: 'users' | 'role' | 'all';
     points: number | string;
     reason: string;
-    type: string;
-    roles?: string[];
+    type: BatchPointsRequest['type'];
+    roles?: UserRole[];
 };
 
 /**
@@ -106,12 +108,16 @@ const UserPage: React.FC = () => {
 
     // Batch Operation States
     const [batchRoleVisible, setBatchRoleVisible] = useState(false);
-        const [batchNotificationVisible, setBatchNotificationVisible] = useState(false);
+    const [batchNotificationVisible, setBatchNotificationVisible] = useState(false);
     const [batchPointsVisible, setBatchPointsVisible] = useState(false);
-    const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [batchForm] = Form.useForm();
     const [notificationForm] = Form.useForm();
-        const [pointsForm] = Form.useForm();
+    const [pointsForm] = Form.useForm();
+    const selectedUserIds = useMemo(
+        () => selectedRowKeys.map((key) => Number(key)),
+        [selectedRowKeys]
+    );
 
     // Login History State
     const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
@@ -389,12 +395,18 @@ const UserPage: React.FC = () => {
      * 批量删除
      */
     const handleBatchDelete = useCallback(async (selectedRowKeys: React.Key[]) => {
+        const ids = selectedRowKeys.map(key => Number(key));
+        if (ids.length === 0) {
+            message.warning('请选择要删除的用户');
+            return;
+        }
+
         try {
-            const ids = selectedRowKeys.map(key => Number(key));
             const response = await adminApi.batchDeleteUsers(ids);
 
             if (response.data.success) {
                 message.success(`成功删除 ${ids.length} 个用户`);
+                setSelectedRowKeys([]);
                 loadData();
             } else {
                 message.error(response.data.message || '批量删除失败');
@@ -407,8 +419,12 @@ const UserPage: React.FC = () => {
     }, [loadData]);
 
     const handleBatchModifyRole = (keys: React.Key[]) => {
-        if (!keys || keys.length === 0) return;
-        setSelectedUserIds(keys.map(k => Number(k)));
+        const targetKeys = keys?.length ? keys : selectedRowKeys;
+        if (targetKeys.length === 0) {
+            message.warning('请选择要修改角色的用户');
+            return;
+        }
+
         batchForm.resetFields();
         setBatchRoleVisible(true);
     };
@@ -416,18 +432,26 @@ const UserPage: React.FC = () => {
     /**
      * 简单批量状态操作（直接执行，不使用弹窗）
      */
-    const handleSimpleBatchStatus = async (keys: React.Key[], status: string) => {
-        if (!keys || keys.length === 0) return;
-        const ids = keys.map(k => Number(k));
+    const handleSimpleBatchStatus = async (keys: React.Key[], status: BatchStatusRequest['status']) => {
+        const targetKeys = keys?.length ? keys : selectedRowKeys;
+        const ids = targetKeys.map(k => Number(k));
+        if (ids.length === 0) {
+            message.warning('请先选择用户');
+            return;
+        }
+
         try {
-            const res = await adminApi.batchUpdateUserStatus({
+            const res = await userBatchService.batchUpdateStatus({
                 userIds: ids,
                 status
-            }) as unknown as ApiResponse<void>;
+            });
 
             if (res.success) {
                 message.success(`批量${status === 'active' ? '启用' : '禁用'}成功`);
+                setSelectedRowKeys([]);
                 loadData();
+            } else {
+                message.error(res.message || '操作失败');
             }
         } catch {
             message.error('操作失败');
@@ -435,27 +459,41 @@ const UserPage: React.FC = () => {
     };
 
     const handleBatchSendNotification = (keys: React.Key[]) => {
-        setSelectedUserIds(keys ? keys.map(k => Number(k)) : []);
+        const targetKeys = keys?.length ? keys : selectedRowKeys;
+        if (targetKeys.length === 0) {
+            message.warning('请先选择用户');
+            return;
+        }
+
         notificationForm.resetFields();
         notificationForm.setFieldsValue({
-            target: (keys && keys.length > 0) ? 'users' : 'all',
+            target: 'users',
             type: 'system'
         });
         setBatchNotificationVisible(true);
     };
 
     const submitBatchRole = async () => {
+        if (selectedUserIds.length === 0) {
+            message.warning('请先选择用户');
+            return;
+        }
+
         try {
-            const values = await batchForm.validateFields();
-            const res = await adminApi.batchUpdateUserRole({
+            const values = await batchForm.validateFields() as { role: UserRole };
+            const payload: BatchRoleRequest = {
                 userIds: selectedUserIds,
                 role: values.role
-            }) as unknown as ApiResponse<void>;
+            };
+            const res = await userBatchService.batchUpdateRole(payload);
 
             if (res.success) {
                 message.success('批量修改角色成功');
                 setBatchRoleVisible(false);
+                setSelectedRowKeys([]);
                 loadData();
+            } else {
+                message.error(res.message || '操作失败');
             }
         } catch {
             message.error('操作失败');
@@ -466,7 +504,7 @@ const UserPage: React.FC = () => {
     const submitBatchNotification = async () => {
         try {
             const values = await notificationForm.validateFields() as BatchNotificationFormValues;
-            const payload: BatchNotificationDto = {
+            const payload: BatchNotificationRequest = {
                 target: values.target,
                 title: values.title,
                 content: values.content,
@@ -479,11 +517,14 @@ const UserPage: React.FC = () => {
                 payload.roles = values.roles;
             }
 
-            const res = await adminApi.batchSendNotification(payload) as unknown as ApiResponse<void>;
+            const res = await userBatchService.batchSendNotification(payload);
 
             if (res.success) {
                 message.success('批量发送通知成功');
                 setBatchNotificationVisible(false);
+                setSelectedRowKeys([]);
+            } else {
+                message.error(res.message || '操作失败');
             }
         } catch {
             message.error('操作失败');
@@ -491,10 +532,15 @@ const UserPage: React.FC = () => {
     };
 
     const handleBatchAddPoints = (keys: React.Key[]) => {
-        setSelectedUserIds(keys ? keys.map(k => Number(k)) : []);
+        const targetKeys = keys?.length ? keys : selectedRowKeys;
+        if (targetKeys.length === 0) {
+            message.warning('请先选择用户');
+            return;
+        }
+
         pointsForm.resetFields();
         pointsForm.setFieldsValue({
-            target: (keys && keys.length > 0) ? 'users' : 'all',
+            target: 'users',
             type: 'activity'
         });
         setBatchPointsVisible(true);
@@ -503,7 +549,7 @@ const UserPage: React.FC = () => {
     const submitBatchPoints = async () => {
         try {
             const values = await pointsForm.validateFields() as BatchPointsFormValues;
-            const payload: BatchPointsDto = {
+            const payload: BatchPointsRequest = {
                 target: values.target,
                 cents: Number(values.points),
                 reason: values.reason,
@@ -516,12 +562,15 @@ const UserPage: React.FC = () => {
                 payload.roles = values.roles;
             }
 
-            const res = await adminApi.batchAddUserPoints(payload) as unknown as ApiResponse<void>;
+            const res = await userBatchService.batchAddPoints(payload);
 
             if (res.success) {
                 message.success('批量增加积分成功');
                 setBatchPointsVisible(false);
+                setSelectedRowKeys([]);
                 loadData();
+            } else {
+                message.error(res.message || '操作失败');
             }
         } catch {
             message.error('操作失败');
@@ -744,14 +793,14 @@ const UserPage: React.FC = () => {
         {
             text: '批量发送通知',
             icon: <MailOutlined />,
-            needSelection: false,
+            needSelection: true,
             onClick: (keys) => handleBatchSendNotification(keys || []),
             permission: USER_PERMISSIONS.UPDATE,
         },
         {
             text: '批量增加积分',
             icon: <CrownOutlined />,
-            needSelection: false,
+            needSelection: true,
             onClick: (keys) => handleBatchAddPoints(keys || []),
             permission: USER_PERMISSIONS.UPDATE,
         },
@@ -896,6 +945,10 @@ const UserPage: React.FC = () => {
                 batchDeletePermission={USER_PERMISSIONS.DELETE}
                 onBatchDelete={handleBatchDelete}
                 toolbarButtons={toolbarButtons}
+                rowSelection={{
+                    selectedRowKeys,
+                    onChange: (keys) => setSelectedRowKeys(keys),
+                }}
                 pagination={{
                     current,
                     pageSize,

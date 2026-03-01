@@ -961,6 +961,30 @@ describe('UserPage', () => {
       expect(screen.getByText('批量增加积分')).toBeInTheDocument();
     });
 
+    it('should enable notification and points actions after selecting rows', async () => {
+      const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
+      renderWithProviders(<UserPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Test User', { exact: false })).toBeInTheDocument();
+      });
+
+      const notifyButton = screen.getByRole('button', { name: '批量发送通知' });
+      const pointsButton = screen.getByRole('button', { name: '批量增加积分' });
+
+      expect(notifyButton).toBeDisabled();
+      expect(pointsButton).toBeDisabled();
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await _user.click(checkboxes[1]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '批量发送通知 (1)' })).toBeEnabled();
+        expect(screen.getByRole('button', { name: '批量增加积分 (1)' })).toBeEnabled();
+      });
+    });
+
     it('should export user data', async () => {
       const _user = userEvent.setup();
       setupMockDataWithUsers(1);

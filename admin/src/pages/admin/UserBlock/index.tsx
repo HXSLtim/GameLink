@@ -394,7 +394,7 @@ const UserBlockPage: React.FC = () => {
                         />
                         <div>
                             <div>{record.blockerName || `ID: ${record.blockerId}`}</div>
-                            <Tag color={BLOCK_USER_TYPE_COLOR[record.blockerType]} size="small">
+                            <Tag color={BLOCK_USER_TYPE_COLOR[record.blockerType]}>
                                 {BLOCK_USER_TYPE_TEXT[record.blockerType]}
                             </Tag>
                         </div>
@@ -414,7 +414,7 @@ const UserBlockPage: React.FC = () => {
                         />
                         <div>
                             <div>{record.blockedName || `ID: ${record.blockedId}`}</div>
-                            <Tag color={BLOCK_USER_TYPE_COLOR[record.blockedType]} size="small">
+                            <Tag color={BLOCK_USER_TYPE_COLOR[record.blockedType]}>
                                 {BLOCK_USER_TYPE_TEXT[record.blockedType]}
                             </Tag>
                         </div>
@@ -570,9 +570,9 @@ const UserBlockPage: React.FC = () => {
                 rowKey="id"
                 onSearch={handleSearch}
                 onRefresh={loadData}
-                onPageChange={(page, size) => {
-                    setCurrent(page);
-                    setPageSize(size);
+                onChange={(pagination) => {
+                    setCurrent(pagination.current ?? 1);
+                    setPageSize(pagination.pageSize ?? 10);
                 }}
                 rowSelection={{
                     selectedRowKeys,
@@ -600,7 +600,7 @@ const UserBlockPage: React.FC = () => {
                                     <div>{currentBlock.blockerName || '未知'}</div>
                                     <Text type="secondary">ID: {currentBlock.blockerId}</Text>
                                     <br />
-                                    <Tag color={BLOCK_USER_TYPE_COLOR[currentBlock.blockerType]} size="small">
+                                    <Tag color={BLOCK_USER_TYPE_COLOR[currentBlock.blockerType]}>
                                         {BLOCK_USER_TYPE_TEXT[currentBlock.blockerType]}
                                     </Tag>
                                 </div>
@@ -616,7 +616,7 @@ const UserBlockPage: React.FC = () => {
                                     <div>{currentBlock.blockedName || '未知'}</div>
                                     <Text type="secondary">ID: {currentBlock.blockedId}</Text>
                                     <br />
-                                    <Tag color={BLOCK_USER_TYPE_COLOR[currentBlock.blockedType]} size="small">
+                                    <Tag color={BLOCK_USER_TYPE_COLOR[currentBlock.blockedType]}>
                                         {BLOCK_USER_TYPE_TEXT[currentBlock.blockedType]}
                                     </Tag>
                                 </div>

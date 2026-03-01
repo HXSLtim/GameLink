@@ -97,7 +97,6 @@ export type {
   RechargeOption,
   RechargeRecord,
   RechargeStats,
-  BatchOperationError,
 } from './payment';
 
 // Game 游戏模块类型
@@ -107,4 +106,28 @@ export * from './game';
 export * from './chat';
 
 // User Block 用户拉黑模块类型
-export * from './userBlock';
+export type {
+  BlockUserType,
+  BlockStatus,
+  UserBlock,
+  UserBlockQueryParams,
+  UserBlockStats,
+  AdminUnblockRequest,
+  BatchUnblockRequest,
+  BatchDeleteRequest,
+  BlockInputItem,
+  BatchBlockRequest,
+  BatchOperationResult as UserBlockBatchOperationResult,
+  BatchOperationError as UserBlockBatchOperationError,
+  CheckBlockStatusResponse,
+} from './userBlock';
+
+export {
+  BLOCK_STATUS_TEXT,
+  BLOCK_STATUS_COLOR,
+  BLOCK_USER_TYPE_TEXT,
+  BLOCK_USER_TYPE_COLOR,
+} from './userBlock';
+
+// User 用户模块类型
+export * from './user';
