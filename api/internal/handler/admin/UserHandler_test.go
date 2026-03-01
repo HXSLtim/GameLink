@@ -15,6 +15,7 @@ import (
 	"gamelink/internal/handler/testutil"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/admin"
+	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/gamecategory"
 	"gamelink/internal/repository/implementations"
@@ -60,14 +61,17 @@ func SetupUserTest(t *testing.T) *UserTestContext {
 	menus := admin.NewMenuRepository(db)
 	statsRepo := stats.NewStatsRepository(db)
 	gameCategories := gamecategory.NewGameCategoryRepository(db)
+	wallets := user.NewWalletRepository(db)
 	c := cache.NewMemory()
+	uow := common.NewUnitOfWork(db)
 
 	// Create admin service
 	svc := adminservice.NewAdminService(adminservice.AdminDeps{
 		Games: games, Users: users, Players: players, Orders: orders, Payments: payments,
 		Roles: roles, ServiceItems: serviceItems, Permissions: permissions, Menus: menus,
-		Stats: statsRepo, GameCategories: gameCategories, Cache: c,
+		Stats: statsRepo, Wallets: wallets, GameCategories: gameCategories, Cache: c,
 	})
+	svc.SetTxManager(uow)
 
 	// Setup router
 	router := testutil.SetupGinTest(t)
@@ -95,6 +99,10 @@ func (ctx *UserTestContext) RegisterUserRoutes() {
 		group.GET("/stats", ctx.Handler.GetUserStats)
 		group.POST("", ctx.Handler.CreateUser)
 		group.POST("/with-player", ctx.Handler.CreateUserWithPlayer)
+		group.POST("/batch/role", ctx.Handler.BatchUpdateUsersRole)
+		group.POST("/batch/status", ctx.Handler.BatchUpdateUsersStatus)
+		group.POST("/batch/points", ctx.Handler.BatchAddUsersPoints)
+		group.POST("/batch/notify", ctx.Handler.BatchNotifyUsers)
 		group.POST("/batch-delete", ctx.Handler.BatchDeleteUsers)
 		group.GET("/:id", ctx.Handler.GetUser)
 		group.PUT("/:id", ctx.Handler.UpdateUser)
@@ -482,6 +490,95 @@ func TestUserHandler_Unit_BatchDeleteUsers_EmptyIDs(t *testing.T) {
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/users/batch-delete", ctx.AdminToken, payload)
 	testutil.AssertError(t, w, http.StatusBadRequest)
+}
+
+func TestUserHandler_Unit_BatchUpdateUsersRole_Success(t *testing.T) {
+	ctx := SetupUserTest(t)
+	ctx.RegisterUserRoutes()
+
+	user1 := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+	user2 := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+
+	payload := map[string]interface{}{
+		"userIds": []uint64{user1.ID, user2.ID},
+		"role":    "player",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/users/batch/role", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var updated []model.User
+	require.NoError(t, ctx.DB.Where("id IN ?", []uint64{user1.ID, user2.ID}).Find(&updated).Error)
+	require.Len(t, updated, 2)
+	for _, u := range updated {
+		assert.Equal(t, model.RolePlayer, u.Role)
+	}
+}
+
+func TestUserHandler_Unit_BatchUpdateUsersStatus_Success(t *testing.T) {
+	ctx := SetupUserTest(t)
+	ctx.RegisterUserRoutes()
+
+	testUser := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+
+	payload := map[string]interface{}{
+		"userIds": []uint64{testUser.ID},
+		"status":  "banned",
+		"reason":  "违规操作",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/users/batch/status", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var updated model.User
+	require.NoError(t, ctx.DB.First(&updated, testUser.ID).Error)
+	assert.Equal(t, model.UserStatusBanned, updated.Status)
+	assert.Equal(t, "违规操作", updated.BanReason)
+}
+
+func TestUserHandler_Unit_BatchAddUsersPoints_Success(t *testing.T) {
+	ctx := SetupUserTest(t)
+	ctx.RegisterUserRoutes()
+
+	user1 := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+	user2 := testutil.CreateAdminUser(t, ctx.DB, model.RolePlayer)
+
+	payload := map[string]interface{}{
+		"userIds": []uint64{user1.ID, user2.ID},
+		"cents":   500,
+		"reason":  "活动奖励",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/users/batch/points", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var wallet1 model.Wallet
+	var wallet2 model.Wallet
+	require.NoError(t, ctx.DB.Where("user_id = ?", user1.ID).First(&wallet1).Error)
+	require.NoError(t, ctx.DB.Where("user_id = ?", user2.ID).First(&wallet2).Error)
+	assert.Equal(t, int64(500), wallet1.BalanceCents)
+	assert.Equal(t, int64(500), wallet2.BalanceCents)
+}
+
+func TestUserHandler_Unit_BatchNotifyUsers_Success(t *testing.T) {
+	ctx := SetupUserTest(t)
+	ctx.RegisterUserRoutes()
+
+	testUser := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
+
+	payload := map[string]interface{}{
+		"userIds":  []uint64{testUser.ID},
+		"title":    "系统通知",
+		"content":  "批量通知测试",
+		"priority": "high",
+	}
+
+	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/users/batch/notify", ctx.AdminToken, payload)
+	testutil.AssertSuccess(t, w)
+
+	var count int64
+	require.NoError(t, ctx.DB.Model(&model.NotificationEvent{}).Where("user_id = ?", testUser.ID).Count(&count).Error)
+	assert.Equal(t, int64(1), count)
 }
 
 // ============================================================================

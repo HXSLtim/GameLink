@@ -208,6 +208,46 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/users/batch-delete [post]
 		group.POST("/users/batch-delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/batch-delete"), userHandler.BatchDeleteUsers)
+		// @Summary      批量更新用户角色
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  dto.BatchUpdateUserRoleRequest  true  "批量角色更新请求"
+		// @Success      200  {object}  adminservice.BatchOperationResponse
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/users/batch/role [post]
+		group.POST("/users/batch/role", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/batch/role"), userHandler.BatchUpdateUsersRole)
+		// @Summary      批量更新用户状态
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  dto.BatchUpdateUserStatusRequest  true  "批量状态更新请求"
+		// @Success      200  {object}  adminservice.BatchOperationResponse
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/users/batch/status [post]
+		group.POST("/users/batch/status", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/batch/status"), userHandler.BatchUpdateUsersStatus)
+		// @Summary      批量增加用户积分
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  dto.BatchAddUsersPointsRequest  true  "批量积分更新请求"
+		// @Success      200  {object}  adminservice.BatchOperationResponse
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/users/batch/points [post]
+		group.POST("/users/batch/points", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/batch/points"), userHandler.BatchAddUsersPoints)
+		// @Summary      批量发送用户通知
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  dto.BatchNotifyUsersRequest  true  "批量通知请求"
+		// @Success      200  {object}  adminservice.BatchOperationResponse
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/users/batch/notify [post]
+		group.POST("/users/batch/notify", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/batch/notify"), userHandler.BatchNotifyUsers)
 		// @Summary      获取用户
 		// @Tags         Admin/Users
 		// @Security     BearerAuth

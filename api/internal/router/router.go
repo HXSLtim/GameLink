@@ -389,8 +389,8 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	// User Tag routes (用户标签管理)
 	adminhandler.RegisterTagRoutes(rbacGroup, r.services.tagSvc)
 
-	// User Batch Operation routes (用户批量操作)
-	adminhandler.RegisterBatchRoutes(rbacGroup, r.services.batchSvc)
+	// User batch operations are registered in adminhandler.RegisterRoutes
+	// to ensure handler -> service -> repository flow via AdminService.
 
 	// Monitor routes (实时监控)
 	r.registerMonitorRoutes(rbacGroup)
