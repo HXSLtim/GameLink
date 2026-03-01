@@ -105,3 +105,6 @@ export * from './game';
 
 // Chat 聊天模块类型
 export * from './chat';
+
+// User Block 用户拉黑模块类型
+export * from './userBlock';

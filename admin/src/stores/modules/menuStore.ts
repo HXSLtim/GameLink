@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { MenuItem } from '../types';
 import { useAuthStore } from './authStore';
+import { adminApi } from '@/api/admin';
 
 import { logger } from '@/utils/logger';
 interface MenuState {
@@ -64,137 +65,28 @@ export const useMenuStore = create<MenuState>()(
         set({ loading: true });
 
         try {
-          // TODO: Replace with actual API call
-          // import { adminApi } from '@/api/admin';
-          // const response = await adminApi.getMyMenus();
+          const response = await adminApi.getMyMenus();
 
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Transform API response to MenuItem format
+          const transformMenu = (menu: any): MenuItem => ({
+            id: menu.id,
+            key: menu.name, // Use 'name' as 'key' for routing
+            label: menu.name,
+            path: menu.path,
+            icon: menu.icon,
+            parentId: menu.parentId,
+            sort: menu.order, // API uses 'order' instead of 'sort'
+            permission: menu.permission,
+            children: menu.children?.map(transformMenu),
+          });
 
-          // Mock menu data
-          const mockMenus: MenuItem[] = [
-            {
-              id: 1,
-              key: 'dashboard',
-              label: '仪表盘',
-              path: '/admin/dashboard',
-              icon: 'DashboardOutlined',
-              sort: 1,
-              permission: 'admin.dashboard.read',
-            },
-            {
-              id: 2,
-              key: 'users',
-              label: '用户管理',
-              path: '/admin/users',
-              icon: 'UserOutlined',
-              sort: 2,
-              permission: 'admin.users.read',
-              children: [
-                {
-                  id: 21,
-                  key: 'users-list',
-                  label: '用户列表',
-                  path: '/admin/users/list',
-                  sort: 1,
-                  permission: 'admin.users.read',
-                },
-                {
-                  id: 22,
-                  key: 'users-block',
-                  label: '黑名单',
-                  path: '/admin/users/block',
-                  sort: 2,
-                  permission: 'admin.users.block',
-                },
-              ],
-            },
-            {
-              id: 3,
-              key: 'players',
-              label: '陪玩师管理',
-              path: '/admin/players',
-              icon: 'TeamOutlined',
-              sort: 3,
-              permission: 'admin.players.read',
-            },
-            {
-              id: 4,
-              key: 'orders',
-              label: '订单管理',
-              path: '/admin/orders',
-              icon: 'ShoppingOutlined',
-              sort: 4,
-              permission: 'admin.orders.read',
-            },
-            {
-              id: 5,
-              key: 'chat',
-              label: '聊天管理',
-              path: '/admin/chat',
-              icon: 'MessageOutlined',
-              sort: 5,
-              permission: 'admin.chat.read',
-            },
-            {
-              id: 6,
-              key: 'payment',
-              label: '支付管理',
-              path: '/admin/payment',
-              icon: 'PayCircleOutlined',
-              sort: 6,
-              permission: 'admin.payment.read',
-            },
-            {
-              id: 7,
-              key: 'system',
-              label: '系统管理',
-              path: '/admin/system',
-              icon: 'SettingOutlined',
-              sort: 7,
-              permission: 'admin.system.read',
-              children: [
-                {
-                  id: 71,
-                  key: 'system-admin',
-                  label: '管理员管理',
-                  path: '/admin/system/admin',
-                  sort: 1,
-                  permission: 'admin.admin.read',
-                },
-                {
-                  id: 72,
-                  key: 'system-role',
-                  label: '角色管理',
-                  path: '/admin/system/role',
-                  sort: 2,
-                  permission: 'admin.role.read',
-                },
-                {
-                  id: 73,
-                  key: 'system-permission',
-                  label: '权限管理',
-                  path: '/admin/system/permission',
-                  sort: 3,
-                  permission: 'admin.permission.read',
-                },
-                {
-                  id: 74,
-                  key: 'system-menu',
-                  label: '菜单管理',
-                  path: '/admin/system/menu',
-                  sort: 4,
-                  permission: 'admin.menu.read',
-                },
-              ],
-            },
-          ];
+          const menus: MenuItem[] = response.data.data.map(transformMenu);
 
-          set({ rawMenus: mockMenus, loading: false });
+          set({ rawMenus: menus, loading: false });
 
           // Auto-filter menus based on current permissions
           const permissions = useAuthStore.getState().userInfo?.permissions || [];
-          const filteredMenus = get().filterMenusByPermission(mockMenus, permissions);
+          const filteredMenus = get().filterMenusByPermission(menus, permissions);
 
           set({ menus: filteredMenus });
 

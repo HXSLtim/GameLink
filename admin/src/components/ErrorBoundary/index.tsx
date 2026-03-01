@@ -3,6 +3,7 @@ import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import type { FallbackProps } from 'react-error-boundary';
 import { Button, Result, Typography, Space } from 'antd';
 import { ReloadOutlined, BugOutlined, HomeOutlined } from '@ant-design/icons';
+import { captureException, addBreadcrumb } from '@/utils/monitoring';
 
 const { Paragraph, Text } = Typography;
 
@@ -107,10 +108,20 @@ function logError(error: Error, info: { componentStack?: string | null }) {
     console.groupEnd();
   }
 
-  // TODO: 生产环境可以发送到错误监控服务 (如 Sentry)
-  // if (import.meta.env.PROD) {
-  //   sendToErrorService({ error, componentStack: info.componentStack });
-  // }
+  // 生产环境发送到错误监控服务 (Sentry)
+  if (import.meta.env.PROD) {
+    // Add breadcrumb for context
+    addBreadcrumb('error-boundary', 'ErrorBoundary caught an error', {
+      errorMessage: error.message,
+      errorName: error.name,
+    });
+
+    // Capture exception with component stack context
+    captureException(error, {
+      componentStack: info.componentStack ?? undefined,
+      errorBoundary: true,
+    });
+  }
 }
 
 interface Props {

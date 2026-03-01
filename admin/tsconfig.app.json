@@ -36,7 +36,8 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "src/env.d.ts"
   ],
   "exclude": [
     "src/test",

@@ -7,6 +7,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import os from 'os'
 import pc from 'picocolors'
 import { VitePWA } from 'vite-plugin-pwa'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 // 获取所有可用的网络接口IP地址
 function getNetworkIPs() {
@@ -84,6 +85,14 @@ export default defineConfig(({ mode }) => {
   plugins: [
     react(),
     showNetworkIPs(), // 显示所有网络IP地址
+    // Sentry source map upload (only in production)
+    mode === 'production' && sentryVitePlugin({
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: 'gamelink',
+      project: 'admin-panel',
+      // Disable Sentry telemetry
+      telemetry: false,
+    }),
     // PWA 支持（默认关闭，防止缓存劫持；需要时通过 VITE_ENABLE_PWA=true 显式启用）
     enablePwa && VitePWA({
       registerType: 'autoUpdate',

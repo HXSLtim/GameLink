@@ -21,6 +21,7 @@ const UserBehavior = lazy(() => import('@/pages/admin/User/Behavior'));
 const UserTags = lazy(() => import('@/pages/admin/User/Tags'));
 const UserLevel = lazy(() => import('@/pages/admin/User/Level'));
 const UserPortrait = lazy(() => import('@/pages/admin/User/Portrait'));
+const BatchPage = lazy(() => import('@/pages/admin/Batch'));
 const RolePage = lazy(() => import('@/pages/admin/Role'));
 const RolePermissionConfig = lazy(() => import('@/pages/admin/Role/PermissionConfig'));
 const GamePage = lazy(() => import('@/pages/admin/Game'));
@@ -96,6 +97,9 @@ const PaymentRecordsPage = lazy(() => import('@/pages/admin/PaymentRecords'));
 const SettlementPage = lazy(() => import('@/pages/admin/Settlement'));
 const SettlementPlayersPage = lazy(() => import('@/pages/admin/Settlement/Players'));
 
+// 对账管理页面
+const ReconciliationPage = lazy(() => import('@/pages/admin/Reconciliation'));
+
 // 聊天管理页面
 const ChatRecordsPage = lazy(() => import('@/pages/adminChat/records'));
 const ChatRoomsPage = lazy(() => import('@/pages/adminChat/rooms'));
@@ -160,6 +164,11 @@ export const routes: RouteConfig[] = [
                 path: 'sys/user/portrait',
                 element: <LazyLoad><UserPortrait /></LazyLoad>,
                 meta: { title: '用户画像分析' }
+            },
+            {
+                path: 'sys/batch',
+                element: <LazyLoad><BatchPage /></LazyLoad>,
+                meta: { title: '批量操作', permission: 'admin.users.update' }
             },
             {
                 path: 'sys/role',
@@ -442,6 +451,17 @@ export const routes: RouteConfig[] = [
                 path: 'settlement/players',
                 element: <LazyLoad><SettlementPlayersPage /></LazyLoad>,
                 meta: { title: '陪玩师归属管理', permission: 'admin.settlement.players' }
+            },
+            // 对账管理模块
+            {
+                path: 'finance/settlement-company',
+                element: <LazyLoad><SettlementPage /></LazyLoad>,
+                meta: { title: '结算公司管理', permission: 'admin.settlement-companies.list' }
+            },
+            {
+                path: 'finance/reconciliation',
+                element: <LazyLoad><ReconciliationPage /></LazyLoad>,
+                meta: { title: '对账管理', permission: 'admin.reconciliations.list' }
             },
             // 个人中心
             {

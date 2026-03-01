@@ -4,12 +4,61 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { vi } from 'vitest';
-import { useMenuStore } from './menuStore';
+import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
 import { useAuthStore } from './authStore';
 
+// Mock the adminApi BEFORE importing menuStore
+const mockGetMyMenus = vi.fn();
+vi.mock('@/api/admin', () => ({
+  adminApi: {
+    getMyMenus: mockGetMyMenus,
+  },
+}));
+
+// Mock logger
+vi.mock('@/utils/logger', () => ({
+  logger: {
+    error: vi.fn(),
+  },
+}));
+
+// Now import menuStore after the mock is set up
+import { useMenuStore } from './menuStore';
+
 describe('menuStore', () => {
+  const mockMenus = [
+    {
+      id: 1,
+      name: 'dashboard',
+      path: '/admin/dashboard',
+      component: 'Dashboard',
+      parentId: null,
+      order: 1,
+      visible: true,
+      type: 'menu' as const,
+      permission: 'admin.dashboard.read',
+      icon: 'DashboardOutlined',
+      children: [],
+    },
+    {
+      id: 2,
+      name: 'users',
+      path: '/admin/users',
+      component: 'Users',
+      parentId: null,
+      order: 2,
+      visible: true,
+      type: 'menu' as const,
+      permission: 'admin.users.read',
+      icon: 'UserOutlined',
+      children: [],
+    },
+  ];
+
   beforeEach(() => {
+    // Clear all mocks
+    vi.clearAllMocks();
+
     // Reset store state before each test
     useMenuStore.setState({
       rawMenus: [],
@@ -18,6 +67,16 @@ describe('menuStore', () => {
       collapsed: false,
       openKeys: [],
       selectedKeys: [],
+    });
+
+    // Reset mock to return successful response
+    mockGetMyMenus.mockResolvedValue({
+      data: {
+        success: true,
+        code: 0,
+        message: 'Success',
+        data: mockMenus,
+      },
     });
 
     // Mock authStore.getState to return user permissions
@@ -50,6 +109,8 @@ describe('menuStore', () => {
         await result.current.fetchMenus();
       });
 
+      // Verify API was called
+      expect(mockGetMyMenus).toHaveBeenCalled();
       expect(result.current.loading).toBe(false);
       expect(result.current.rawMenus.length).toBeGreaterThan(0);
       expect(result.current.menus.length).toBeGreaterThan(0);
@@ -68,6 +129,7 @@ describe('menuStore', () => {
         await result.current.fetchMenus();
       });
 
+      expect(mockGetMyMenus).toHaveBeenCalled();
       expect(result.current.menus.length).toBe(result.current.rawMenus.length);
     });
 
@@ -85,8 +147,24 @@ describe('menuStore', () => {
       });
 
       // Should only show dashboard menu
+      expect(mockGetMyMenus).toHaveBeenCalled();
       expect(result.current.menus.length).toBe(1);
       expect(result.current.menus[0].key).toBe('dashboard');
+    });
+
+    it('should handle API errors gracefully', async () => {
+      // Mock API error
+      mockGetMyMenus.mockRejectedValue(new Error('Network error'));
+
+      const { result } = renderHook(() => useMenuStore());
+
+      await act(async () => {
+        await result.current.fetchMenus();
+      });
+
+      expect(mockGetMyMenus).toHaveBeenCalled();
+      expect(result.current.loading).toBe(false);
+      expect(result.current.menus.length).toBe(0);
     });
   });
 

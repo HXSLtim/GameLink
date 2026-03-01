@@ -121,11 +121,20 @@ export const ADMIN_MENUS: MenuConfig[] = [
                 description: '分配用户角色',
             },
             {
+                name: '批量操作',
+                path: '/admin/sys/batch',
+                component: 'Batch',
+                icon: 'BlockOutlined',
+                order: 6,
+                permission: 'admin.users.update',
+                description: '用户批量操作管理',
+            },
+            {
                 name: '审计日志',
                 path: '/admin/sys/log',
                 component: 'Audit',
                 icon: 'FileSearchOutlined',
-                order: 6,
+                order: 7,
                 permission: 'admin.operation-logs.list',
                 description: '查看系统操作日志',
             },
@@ -274,6 +283,15 @@ export const ADMIN_MENUS: MenuConfig[] = [
                 order: 5,
                 permission: 'admin.withdraw-routing.list',
                 description: '管理提现分流规则',
+            },
+            {
+                name: '对账管理',
+                path: '/admin/finance/reconciliation',
+                component: 'Reconciliation',
+                icon: 'audit',
+                order: 6,
+                permission: 'admin.reconciliations.list',
+                description: '管理与第三方支付、银行等对账记录',
             },
         ],
     },
@@ -788,6 +806,12 @@ export const ADMIN_PERMISSIONS: PermissionConfig[] = [
     { method: 'POST', path: '/api/v1/admin/settlement-companies', code: 'admin.settlement-companies.create', group: '/admin/settlement-companies', description: '创建结算公司' },
     { method: 'PUT', path: '/api/v1/admin/settlement-companies/:id', code: 'admin.settlement-companies.update', group: '/admin/settlement-companies', description: '更新结算公司' },
     { method: 'DELETE', path: '/api/v1/admin/settlement-companies/:id', code: 'admin.settlement-companies.delete', group: '/admin/settlement-companies', description: '删除结算公司' },
+
+    // 对账管理
+    { method: 'GET', path: '/api/v1/admin/reconciliations', code: 'admin.reconciliations.list', group: '/admin/reconciliations', description: '获取对账单列表' },
+    { method: 'GET', path: '/api/v1/admin/reconciliations/:id', code: 'admin.reconciliations.read', group: '/admin/reconciliations', description: '获取对账单详情' },
+    { method: 'POST', path: '/api/v1/admin/reconciliations', code: 'admin.reconciliations.create', group: '/admin/reconciliations', description: '创建对账单' },
+    { method: 'POST', path: '/api/v1/admin/reconciliations/:id/execute', code: 'admin.reconciliations.execute', group: '/admin/reconciliations', description: '执行对账' },
 
     // 排行榜抽成管理
     { method: 'GET', path: '/api/v1/admin/ranking-commissions', code: 'admin.ranking-commissions.list', group: '/admin/ranking-commissions', description: '获取排行榜抽成列表' },
