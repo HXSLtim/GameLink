@@ -17,6 +17,7 @@ const (
 	ChannelBroadcast = "ws:broadcast" // Broadcast to all connected clients
 	ChannelRole      = "ws:role:%s"   // Broadcast to specific role (user, player, admin)
 	ChannelUser      = "ws:user:%d"   // Send to specific user
+	ChannelGroup     = "ws:group:%d"  // Send to specific conversation/group subscribers
 	ChannelPresence  = "ws:presence"  // User presence updates
 )
 
@@ -45,7 +46,8 @@ type PubSubMessage struct {
 	Type      string    `json:"type"`   // broadcast, role, user
 	UserID    *uint64   `json:"userID"` // Target user ID (for user messages)
 	Role      *string   `json:"role"`   // Target role (for role messages)
-	Data      []byte    `json:"data"`   // Actual message payload
+	GroupID   *uint64   `json:"groupID,omitempty"`
+	Data      []byte    `json:"data"` // Actual message payload
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -96,6 +98,7 @@ func (rps *RedisPubSub) Subscribe() {
 		ChannelBroadcast,
 		"ws:role:*", // Pattern for role channels
 		"ws:user:*", // Pattern for user channels
+		"ws:group:*",
 		ChannelPresence,
 	}
 
@@ -167,6 +170,12 @@ func (rps *RedisPubSub) handleMessage(msg *redis.Message) error {
 		// Send to local client with specific user ID
 		if psMsg.UserID != nil {
 			rps.hub.BroadcastToUserLocal(psMsg.Data, *psMsg.UserID)
+		}
+
+	case "group":
+		// Send to local subscribers of group conversation
+		if psMsg.GroupID != nil {
+			rps.hub.BroadcastToGroupLocal(psMsg.Data, *psMsg.GroupID)
 		}
 
 	case "presence":
@@ -252,6 +261,33 @@ func (rps *RedisPubSub) BroadcastToUser(message []byte, userID uint64) error {
 	channel := fmt.Sprintf(ChannelUser, userID)
 	if err := rps.client.Publish(rps.ctx, channel, data).Err(); err != nil {
 		return fmt.Errorf("failed to publish user message: %w", err)
+	}
+
+	rps.mu.Lock()
+	rps.messagesSent++
+	rps.lastActivityAt = time.Now()
+	rps.mu.Unlock()
+
+	return nil
+}
+
+// BroadcastToGroup sends a message to subscribers of a group across all instances.
+func (rps *RedisPubSub) BroadcastToGroup(message []byte, groupID uint64) error {
+	psMsg := PubSubMessage{
+		Type:      "group",
+		GroupID:   &groupID,
+		Data:      message,
+		Timestamp: time.Now(),
+	}
+
+	data, err := json.Marshal(psMsg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal group message: %w", err)
+	}
+
+	channel := fmt.Sprintf(ChannelGroup, groupID)
+	if err := rps.client.Publish(rps.ctx, channel, data).Err(); err != nil {
+		return fmt.Errorf("failed to publish group message: %w", err)
 	}
 
 	rps.mu.Lock()

@@ -23,15 +23,18 @@ const (
 	MessageTypeAlert        MessageType = "alert"
 
 	// Client message types
-	MessageTypePing      MessageType = "ping"
-	MessageTypePong      MessageType = "pong"
-	MessageTypeSubscribe MessageType = "subscribe"
+	MessageTypePing        MessageType = "ping"
+	MessageTypePong        MessageType = "pong"
+	MessageTypeSubscribe   MessageType = "subscribe"
+	MessageTypeUnsubscribe MessageType = "unsubscribe"
 
 	// User realtime message types
-	MessageTypeChatMessage  MessageType = "chat_message"
-	MessageTypeNotification MessageType = "notification"
-	MessageTypeOrderStatus  MessageType = "order_status"
-	MessageTypeOrderNew     MessageType = "order_new"
+	MessageTypeChatMessage         MessageType = "chat_message"
+	MessageTypeConversationMessage MessageType = "conversation_message"
+	MessageTypeConversationClosed  MessageType = "conversation_closed"
+	MessageTypeNotification        MessageType = "notification"
+	MessageTypeOrderStatus         MessageType = "order_status"
+	MessageTypeOrderNew            MessageType = "order_new"
 
 	// Presence message types (Discord/Kook style)
 	MessageTypePresenceUpdate    MessageType = "presence_update"    // 状态变更

@@ -39,18 +39,22 @@ type Client struct {
 	// Connection metadata
 	ConnectedAt time.Time
 	RemoteAddr  string
+
+	// Conversation/group subscriptions for scoped realtime events.
+	subscribedGroups map[uint64]struct{}
 }
 
 // NewClient creates a new WebSocket client.
 func NewClient(hub *Hub, conn *websocket.Conn, userID uint64, role string) *Client {
 	return &Client{
-		hub:         hub,
-		conn:        conn,
-		send:        make(chan []byte, 256),
-		UserID:      userID,
-		Role:        role,
-		ConnectedAt: time.Now(),
-		RemoteAddr:  conn.RemoteAddr().String(),
+		hub:              hub,
+		conn:             conn,
+		send:             make(chan []byte, 256),
+		UserID:           userID,
+		Role:             role,
+		ConnectedAt:      time.Now(),
+		RemoteAddr:       conn.RemoteAddr().String(),
+		subscribedGroups: make(map[uint64]struct{}),
 	}
 }
 
@@ -164,12 +168,61 @@ func (c *Client) handleMessage(message []byte) {
 		c.send <- data
 
 	case "subscribe":
-		// Handle subscription to specific topics
+		// Handle subscription to specific groups/topics
+		if groupID, ok := parseGroupID(msg.Data); ok {
+			c.hub.SubscribeClientToGroup(c, groupID)
+			if c.subscribedGroups == nil {
+				c.subscribedGroups = make(map[uint64]struct{})
+			}
+			c.subscribedGroups[groupID] = struct{}{}
+			log.Printf("User %d subscribed to group: %d", c.UserID, groupID)
+			return
+		}
 		log.Printf("User %d subscribed to: %v", c.UserID, msg.Data)
+
+	case "unsubscribe":
+		if groupID, ok := parseGroupID(msg.Data); ok {
+			c.hub.UnsubscribeClientFromGroup(c, groupID)
+			delete(c.subscribedGroups, groupID)
+			log.Printf("User %d unsubscribed from group: %d", c.UserID, groupID)
+			return
+		}
+		log.Printf("User %d unsubscribed from: %v", c.UserID, msg.Data)
 
 	default:
 		log.Printf("Unknown message type: %s", msg.Type)
 	}
+}
+
+func parseGroupID(raw interface{}) (uint64, bool) {
+	data, ok := raw.(map[string]interface{})
+	if !ok {
+		return 0, false
+	}
+
+	candidates := []string{"groupId", "groupID", "conversationId", "conversationID"}
+	for _, key := range candidates {
+		value, exists := data[key]
+		if !exists {
+			continue
+		}
+		switch item := value.(type) {
+		case float64:
+			if item > 0 {
+				return uint64(item), true
+			}
+		case int:
+			if item > 0 {
+				return uint64(item), true
+			}
+		case uint64:
+			if item > 0 {
+				return item, true
+			}
+		}
+	}
+
+	return 0, false
 }
 
 // Send sends a message to the client.

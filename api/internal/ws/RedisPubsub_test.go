@@ -136,6 +136,26 @@ func TestRedisPubSub_BroadcastToUser(t *testing.T) {
 	assert.Equal(t, int64(1), metrics["messagesSent"])
 }
 
+// TestRedisPubSub_BroadcastToGroup tests broadcasting to specific conversation groups.
+func TestRedisPubSub_BroadcastToGroup(t *testing.T) {
+	mr, client := setupTestRedis(t)
+	defer mr.Close()
+	defer client.Close()
+
+	hub := NewHub()
+	redisPS := NewRedisPubSub(client, hub)
+	redisPS.Subscribe()
+
+	time.Sleep(100 * time.Millisecond)
+
+	testMessage := []byte(`{"type":"conversation_message","data":"group payload"}`)
+	err := redisPS.BroadcastToGroup(testMessage, 99)
+	require.NoError(t, err)
+
+	metrics := redisPS.GetMetrics()
+	assert.Equal(t, int64(1), metrics["messagesSent"])
+}
+
 // TestRedisPubSub_PublishPresence tests publishing presence updates.
 func TestRedisPubSub_PublishPresence(t *testing.T) {
 	mr, client := setupTestRedis(t)

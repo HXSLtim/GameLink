@@ -250,6 +250,9 @@ func TestMessageTypes(t *testing.T) {
 	assert.Equal(t, MessageType("ping"), MessageTypePing)
 	assert.Equal(t, MessageType("pong"), MessageTypePong)
 	assert.Equal(t, MessageType("subscribe"), MessageTypeSubscribe)
+	assert.Equal(t, MessageType("unsubscribe"), MessageTypeUnsubscribe)
+	assert.Equal(t, MessageType("conversation_message"), MessageTypeConversationMessage)
+	assert.Equal(t, MessageType("conversation_closed"), MessageTypeConversationClosed)
 }
 
 // TestSystemStatusFields verifies system status structure.

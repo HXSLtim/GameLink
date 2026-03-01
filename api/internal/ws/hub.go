@@ -12,6 +12,12 @@ type Hub struct {
 	// Registered clients.
 	clients map[*Client]bool
 
+	// Group subscriptions for conversation-scoped broadcasting.
+	groupClients map[uint64]map[*Client]bool
+
+	// User indexed connections for quick cleanup/lookup.
+	userClients map[uint64]map[*Client]bool
+
 	// Inbound messages from the clients.
 	broadcast chan []byte
 
@@ -46,10 +52,12 @@ type HubMetrics struct {
 // Use SetRedisPubSub to enable multi-instance support.
 func NewHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte, 256),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		clients:    make(map[*Client]bool),
+		broadcast:    make(chan []byte, 256),
+		register:     make(chan *Client),
+		unregister:   make(chan *Client),
+		clients:      make(map[*Client]bool),
+		groupClients: make(map[uint64]map[*Client]bool),
+		userClients:  make(map[uint64]map[*Client]bool),
 		metrics: &HubMetrics{
 			LastActivityAt: time.Now(),
 		},
@@ -80,6 +88,10 @@ func (h *Hub) Run() {
 		case client := <-h.register:
 			h.mu.Lock()
 			h.clients[client] = true
+			if _, ok := h.userClients[client.UserID]; !ok {
+				h.userClients[client.UserID] = make(map[*Client]bool)
+			}
+			h.userClients[client.UserID][client] = true
 			h.metrics.TotalConnections++
 			h.metrics.ActiveConnections = len(h.clients)
 			h.metrics.LastActivityAt = time.Now()
@@ -97,6 +109,20 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
+				if userSet, exists := h.userClients[client.UserID]; exists {
+					delete(userSet, client)
+					if len(userSet) == 0 {
+						delete(h.userClients, client.UserID)
+					}
+				}
+
+				for groupID, subscribers := range h.groupClients {
+					delete(subscribers, client)
+					if len(subscribers) == 0 {
+						delete(h.groupClients, groupID)
+					}
+				}
+
 				close(client.send)
 				h.metrics.ActiveConnections = len(h.clients)
 				h.metrics.LastActivityAt = time.Now()
@@ -226,8 +252,8 @@ func (h *Hub) BroadcastToUserLocal(message []byte, userID uint64) {
 // broadcastToUserLocal is the internal implementation for user-specific local broadcast.
 func (h *Hub) broadcastToUserLocal(message []byte, userID uint64) {
 	h.mu.RLock()
-	for client := range h.clients {
-		if client.UserID == userID {
+	if userSet, ok := h.userClients[userID]; ok {
+		for client := range userSet {
 			select {
 			case client.send <- message:
 			default:
@@ -235,6 +261,82 @@ func (h *Hub) broadcastToUserLocal(message []byte, userID uint64) {
 					h.unregister <- c
 				}(client)
 			}
+		}
+	}
+	h.mu.RUnlock()
+}
+
+// SubscribeClientToGroup subscribes a client to a conversation/group channel.
+func (h *Hub) SubscribeClientToGroup(client *Client, groupID uint64) {
+	if client == nil || groupID == 0 {
+		return
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if _, ok := h.clients[client]; !ok {
+		return
+	}
+
+	if _, ok := h.groupClients[groupID]; !ok {
+		h.groupClients[groupID] = make(map[*Client]bool)
+	}
+	h.groupClients[groupID][client] = true
+}
+
+// UnsubscribeClientFromGroup unsubscribes a client from a conversation/group channel.
+func (h *Hub) UnsubscribeClientFromGroup(client *Client, groupID uint64) {
+	if client == nil || groupID == 0 {
+		return
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	subscribers, ok := h.groupClients[groupID]
+	if !ok {
+		return
+	}
+	delete(subscribers, client)
+	if len(subscribers) == 0 {
+		delete(h.groupClients, groupID)
+	}
+}
+
+// BroadcastToGroup broadcasts a message to all subscribed clients in a group.
+// If Redis Pub/Sub is enabled, it also broadcasts to subscribers on other instances.
+func (h *Hub) BroadcastToGroup(message []byte, groupID uint64) {
+	h.broadcastToGroupLocal(message, groupID)
+
+	h.mu.RLock()
+	redisPS := h.redisPubSub
+	h.mu.RUnlock()
+
+	if redisPS != nil {
+		go func() {
+			if err := redisPS.BroadcastToGroup(message, groupID); err != nil {
+				log.Printf("Failed to broadcast to group via Redis: %v", err)
+			}
+		}()
+	}
+}
+
+// BroadcastToGroupLocal broadcasts a message to local group subscribers only.
+func (h *Hub) BroadcastToGroupLocal(message []byte, groupID uint64) {
+	h.broadcastToGroupLocal(message, groupID)
+}
+
+func (h *Hub) broadcastToGroupLocal(message []byte, groupID uint64) {
+	h.mu.RLock()
+	subscribers := h.groupClients[groupID]
+	for client := range subscribers {
+		select {
+		case client.send <- message:
+		default:
+			go func(c *Client) {
+				h.unregister <- c
+			}(client)
 		}
 	}
 	h.mu.RUnlock()
@@ -271,6 +373,14 @@ func (h *Hub) GetOnlineCountByRole() map[string]int {
 		counts[client.Role]++
 	}
 	return counts
+}
+
+// GetOnlineCountByGroup returns subscribed online count for a group.
+func (h *Hub) GetOnlineCountByGroup(groupID uint64) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	return len(h.groupClients[groupID])
 }
 
 // ClientCount returns the total number of connected clients.
