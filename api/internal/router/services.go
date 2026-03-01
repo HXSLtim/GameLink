@@ -18,6 +18,7 @@ import (
 	"gamelink/internal/repository/common"
 	contentrepo "gamelink/internal/repository/content"
 	contentcategoryrepo "gamelink/internal/repository/contentcategory"
+	conversationrepo "gamelink/internal/repository/conversation"
 	couponrepo "gamelink/internal/repository/coupon"
 	gamerepo "gamelink/internal/repository/game"
 	gamerankrepo "gamelink/internal/repository/gamerank"
@@ -53,6 +54,7 @@ import (
 	commissionservice "gamelink/internal/service/commission"
 	contentservice "gamelink/internal/service/content"
 	contentcategoryservice "gamelink/internal/service/contentcategory"
+	conversationservice "gamelink/internal/service/conversation"
 	couponservice "gamelink/internal/service/coupon"
 	"gamelink/internal/service/external"
 	gamerankservice "gamelink/internal/service/gamerank"
@@ -95,16 +97,17 @@ import (
 // appServices 包含所有领域服务实例和调度器句柄，供路由注册使用。
 type appServices struct {
 	// 共享仓储（避免在路由注册中重复创建）
-	userRepo        repository.UserRepository
-	playerRepo      repository.PlayerRepository
-	orderRepo       repoiface.OrderRepository
-	withdrawRepo    withdrawrepo.WithdrawRepository
-	commissionRepo  commissionrepo.CommissionRepository
-	serviceItemRepo repository.ServiceItemRepository
-	paymentRepo     repository.PaymentRepository
-	chatGroupRepo   repository.ChatGroupRepository
-	chatMemberRepo  repository.ChatMemberRepository
-	chatMessageRepo repository.ChatMessageRepository
+	userRepo         repository.UserRepository
+	playerRepo       repository.PlayerRepository
+	orderRepo        repoiface.OrderRepository
+	withdrawRepo     withdrawrepo.WithdrawRepository
+	commissionRepo   commissionrepo.CommissionRepository
+	serviceItemRepo  repository.ServiceItemRepository
+	paymentRepo      repository.PaymentRepository
+	chatGroupRepo    repository.ChatGroupRepository
+	chatMemberRepo   repository.ChatMemberRepository
+	chatMessageRepo  repository.ChatMessageRepository
+	conversationRepo *conversationrepo.Repository
 
 	commissionSvc           *commissionservice.CommissionService
 	serviceItemSvc          *itemservice.ServiceItemService
@@ -117,6 +120,7 @@ type appServices struct {
 	disputeSvc              *orderservice.DisputeService
 	earningsSvc             *userservice.EarningsService
 	chatSvc                 *chatservice.ChatService
+	conversationSvc         *conversationservice.Service
 	feedSvc                 *contentservice.FeedService
 	notificationSvc         *contentservice.NotificationService
 	uploadSvc               *uploadservice.Service
@@ -206,6 +210,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	chatMemberRepo := chatrepo.NewChatMemberRepository(orm)
 	chatMessageRepo := chatrepo.NewChatMessageRepository(orm)
 	chatReportRepo := chatrepo.NewChatReportRepository(orm)
+	conversationRepo := conversationrepo.NewRepository(orm)
 	paymentRepo := ordermodelsrepo.NewPaymentRepository(orm)
 	reviewRepo := ordermodelsrepo.NewReviewRepository(orm)
 	reviewReplyRepo := ordermodelsrepo.NewReviewReplyRepository(orm)
@@ -289,6 +294,8 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	earningsSvc := userservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
 	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, userRepo, cacheClient)
 	chatSvc.SetWebsocketHub(wsHub)
+	roleRepo := adminrepo.NewRoleRepository(orm)
+	conversationSvc := conversationservice.NewService(conversationRepo, userRepo, roleRepo, wsHub)
 	feedSvc := contentservice.NewFeedService(feedRepo, nil)
 	notificationSvc := contentservice.NewNotificationService(notificationRepo)
 	uploadSvc := uploadservice.NewService(uploadRepo, externalCfg)
@@ -421,16 +428,17 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 
 	return &appServices{
 		// 共享仓储
-		userRepo:        userRepo,
-		playerRepo:      playerRepo,
-		orderRepo:       orderRepo,
-		withdrawRepo:    withdrawRepo,
-		commissionRepo:  commissionRepo,
-		serviceItemRepo: serviceItemRepo,
-		paymentRepo:     paymentRepo,
-		chatGroupRepo:   chatGroupRepo,
-		chatMemberRepo:  chatMemberRepo,
-		chatMessageRepo: chatMessageRepo,
+		userRepo:         userRepo,
+		playerRepo:       playerRepo,
+		orderRepo:        orderRepo,
+		withdrawRepo:     withdrawRepo,
+		commissionRepo:   commissionRepo,
+		serviceItemRepo:  serviceItemRepo,
+		paymentRepo:      paymentRepo,
+		chatGroupRepo:    chatGroupRepo,
+		chatMemberRepo:   chatMemberRepo,
+		chatMessageRepo:  chatMessageRepo,
+		conversationRepo: conversationRepo,
 		// 服务
 		commissionSvc:           commissionSvc,
 		serviceItemSvc:          serviceItemSvc,
@@ -445,6 +453,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 		disputeSvc:              disputeSvc,
 		earningsSvc:             earningsSvc,
 		chatSvc:                 chatSvc,
+		conversationSvc:         conversationSvc,
 		feedSvc:                 feedSvc,
 		notificationSvc:         notificationSvc,
 		uploadSvc:               uploadSvc,

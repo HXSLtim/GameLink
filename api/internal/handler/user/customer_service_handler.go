@@ -1,17 +1,13 @@
 package user
 
 import (
-	"context"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	chatservice "gamelink/internal/service/chat"
 	"gamelink/pkg/apierr"
 )
 
@@ -25,26 +21,24 @@ func (h *customerServiceHandler) listConversations(c *gin.Context) {
 	page, pageSize := parsePagination(c)
 	beforeID := parseBeforeMessageID(c)
 
-	group, agent, err := h.ensureSession(c.Request.Context(), userID)
+	conversations, total, err := h.conversationSvc.ListConversations(c.Request.Context(), userID, page, pageSize)
 	if err != nil {
 		respondAPIError(c, err)
 		return
 	}
 
-	messages, total, err := h.loadConversationMessages(c.Request.Context(), userID, group.ID, page, pageSize, beforeID)
-	if err != nil {
-		respondAPIError(c, err)
-		return
+	var messages []model.ConversationMessage
+	if len(conversations) > 0 {
+		primary := conversations[0]
+		messages, _, err = h.conversationSvc.ListMessages(c.Request.Context(), userID, primary.GroupID, page, pageSize, beforeID)
+		if err != nil {
+			respondAPIError(c, err)
+			return
+		}
 	}
 
-	if len(messages) > 0 {
-		lastMessage := messages[len(messages)-1]
-		_ = h.chatSvc.MarkRead(c.Request.Context(), group.ID, userID, lastMessage.ID)
-	}
-
-	conversation := h.buildConversation(group, agent, userID, messages)
 	payload := model.ConversationListResponse{
-		Conversations: []model.Conversation{conversation},
+		Conversations: conversations,
 		Messages:      messages,
 		Total:         total,
 		Page:          page,
@@ -73,31 +67,11 @@ func (h *customerServiceHandler) createConversation(c *gin.Context) {
 		return
 	}
 
-	content := strings.TrimSpace(req.Content)
-	if content == "" {
-		respondAPIError(c, apierr.BadRequest("content is required"))
-		return
-	}
-
-	group, agent, err := h.ensureSession(c.Request.Context(), userID)
+	conversation, message, err := h.conversationSvc.CreateConversation(c.Request.Context(), userID, req.Content)
 	if err != nil {
 		respondAPIError(c, err)
 		return
 	}
-
-	msg, err := h.chatSvc.SendMessage(c.Request.Context(), chatservice.SendMessageInput{
-		GroupID:     group.ID,
-		SenderID:    userID,
-		Content:     content,
-		MessageType: model.ChatMessageTypeText,
-	})
-	if err != nil {
-		respondAPIError(c, err)
-		return
-	}
-
-	message := toConversationMessage(*msg, userID)
-	conversation := h.buildConversation(group, agent, userID, []model.ConversationMessage{message})
 
 	respondJSON[any](c, http.StatusCreated, model.APIResponse[any]{
 		Success: true,
@@ -110,93 +84,100 @@ func (h *customerServiceHandler) createConversation(c *gin.Context) {
 	})
 }
 
-func (h *customerServiceHandler) loadConversationMessages(
-	ctx context.Context,
-	userID uint64,
-	groupID uint64,
-	page int,
-	pageSize int,
-	beforeID *uint64,
-) ([]model.ConversationMessage, int64, error) {
-	rawMessages, total, err := h.chatSvc.ListMessages(ctx, userID, groupID, chatservice.ListMessagesOptions{
-		Page:     page,
-		PageSize: pageSize,
-		BeforeID: beforeID,
-	})
+func (h *customerServiceHandler) listConversationMessages(c *gin.Context) {
+	userID := getUserIDFromContext(c)
+	if userID == 0 {
+		respondAPIError(c, apierr.Unauthorized("unauthorized"))
+		return
+	}
+
+	conversationID, err := parseUintParam(c, "id")
+	if err != nil || conversationID == 0 {
+		respondAPIError(c, apierr.BadRequest("invalid conversation id"))
+		return
+	}
+
+	page, pageSize := parsePagination(c)
+	beforeID := parseBeforeMessageID(c)
+	messages, total, err := h.conversationSvc.ListMessages(c.Request.Context(), userID, conversationID, page, pageSize, beforeID)
 	if err != nil {
-		return nil, 0, err
+		respondAPIError(c, err)
+		return
 	}
 
-	messages := make([]model.ConversationMessage, 0, len(rawMessages))
-	for _, item := range rawMessages {
-		messages = append(messages, toConversationMessage(item, userID))
-	}
-
-	sort.Slice(messages, func(i, j int) bool {
-		return messages[i].ID < messages[j].ID
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data: gin.H{
+			"conversationId": conversationID,
+			"messages":       messages,
+			"total":          total,
+			"page":           page,
+			"pageSize":       pageSize,
+			"hasMore":        int64(page*pageSize) < total,
+		},
 	})
-
-	return messages, total, nil
 }
 
-func (h *customerServiceHandler) buildConversation(
-	group *model.ChatGroup,
-	agent *model.User,
-	userID uint64,
-	messages []model.ConversationMessage,
-) model.Conversation {
-	conversation := model.Conversation{
-		ID:            group.ID,
-		GroupID:       group.ID,
-		UserID:        userID,
-		Status:        model.ConversationStatusActive,
-		IsAgentOnline: agent != nil && agent.Status == model.UserStatusActive,
-		CreatedAt:     group.CreatedAt,
-		UpdatedAt:     group.UpdatedAt,
+func (h *customerServiceHandler) sendConversationMessage(c *gin.Context) {
+	userID := getUserIDFromContext(c)
+	if userID == 0 {
+		respondAPIError(c, apierr.Unauthorized("unauthorized"))
+		return
 	}
 
-	if !group.IsActive {
-		conversation.Status = model.ConversationStatusClosed
+	conversationID, err := parseUintParam(c, "id")
+	if err != nil || conversationID == 0 {
+		respondAPIError(c, apierr.BadRequest("invalid conversation id"))
+		return
 	}
 
-	if agent != nil {
-		conversation.AgentID = agent.ID
-		conversation.AgentAvatar = agent.AvatarURL
-		conversation.AgentName = strings.TrimSpace(agent.Nickname)
-		if conversation.AgentName == "" {
-			conversation.AgentName = strings.TrimSpace(agent.Name)
-		}
-		if conversation.AgentName == "" {
-			conversation.AgentName = "在线客服"
-		}
+	var req sendCustomerServiceMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
 	}
 
-	if len(messages) > 0 {
-		lastMessage := messages[len(messages)-1]
-		conversation.LastMessage = lastMessage.Content
-		if parsed, err := time.Parse(time.RFC3339, lastMessage.CreatedAt); err == nil {
-			conversation.LastMessageAt = &parsed
-		}
+	message, err := h.conversationSvc.SendMessage(c.Request.Context(), userID, conversationID, req.Content)
+	if err != nil {
+		respondAPIError(c, err)
+		return
 	}
 
-	return conversation
+	respondJSON[model.ConversationMessage](c, http.StatusCreated, model.APIResponse[model.ConversationMessage]{
+		Success: true,
+		Code:    http.StatusCreated,
+		Message: "created",
+		Data:    *message,
+	})
 }
 
-func toConversationMessage(item model.ChatMessage, userID uint64) model.ConversationMessage {
-	content := strings.TrimSpace(item.Content)
-	if content == "" && item.ImageURL != "" {
-		content = item.ImageURL
+func (h *customerServiceHandler) closeConversation(c *gin.Context) {
+	userID := getUserIDFromContext(c)
+	if userID == 0 {
+		respondAPIError(c, apierr.Unauthorized("unauthorized"))
+		return
 	}
 
-	return model.ConversationMessage{
-		ID:          item.ID,
-		GroupID:     item.GroupID,
-		SenderID:    item.SenderID,
-		Content:     content,
-		MessageType: item.MessageType,
-		IsMe:        item.SenderID == userID,
-		CreatedAt:   item.CreatedAt.Format(time.RFC3339),
+	conversationID, err := parseUintParam(c, "id")
+	if err != nil || conversationID == 0 {
+		respondAPIError(c, apierr.BadRequest("invalid conversation id"))
+		return
 	}
+
+	conversation, err := h.conversationSvc.CloseConversation(c.Request.Context(), userID, conversationID)
+	if err != nil {
+		respondAPIError(c, err)
+		return
+	}
+
+	respondJSON[model.Conversation](c, http.StatusOK, model.APIResponse[model.Conversation]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "closed",
+		Data:    *conversation,
+	})
 }
 
 func parseBeforeMessageID(c *gin.Context) *uint64 {

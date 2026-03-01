@@ -1,24 +1,18 @@
 package user
 
 import (
-	"context"
 	"net/http"
-	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	"gamelink/internal/repository"
-	chatservice "gamelink/internal/service/chat"
+	conversationservice "gamelink/internal/service/conversation"
 	"gamelink/pkg/apierr"
 )
 
 type customerServiceHandler struct {
-	chatSvc  *chatservice.ChatService
-	userRepo repository.UserRepository
-	roleRepo repository.RoleRepository
+	conversationSvc *conversationservice.Service
 }
 
 type customerServiceSessionResponse struct {
@@ -50,19 +44,15 @@ type sendCustomerServiceMessageRequest struct {
 
 func RegisterCustomerServiceRoutes(
 	router gin.IRouter,
-	chatSvc *chatservice.ChatService,
-	userRepo repository.UserRepository,
-	roleRepo repository.RoleRepository,
+	conversationSvc *conversationservice.Service,
 	authMiddleware gin.HandlerFunc,
 ) {
-	if chatSvc == nil || userRepo == nil {
+	if conversationSvc == nil {
 		return
 	}
 
 	h := &customerServiceHandler{
-		chatSvc:  chatSvc,
-		userRepo: userRepo,
-		roleRepo: roleRepo,
+		conversationSvc: conversationSvc,
 	}
 
 	group := router.Group("/customer-service")
@@ -72,13 +62,20 @@ func RegisterCustomerServiceRoutes(
 	group.POST("/messages", h.sendMessage)
 	group.GET("/conversations", h.listConversations)
 	group.POST("/conversations", h.createConversation)
+	group.GET("/conversations/:id/messages", h.listConversationMessages)
+	group.POST("/conversations/:id/messages", h.sendConversationMessage)
+	group.DELETE("/conversations/:id", h.closeConversation)
 }
 
 // getSession 获取当前用户的客服会话（不存在时自动创建）。
 func (h *customerServiceHandler) getSession(c *gin.Context) {
 	userID := getUserIDFromContext(c)
+	if userID == 0 {
+		respondAPIError(c, apierr.Unauthorized("unauthorized"))
+		return
+	}
 
-	group, agent, err := h.ensureSession(c.Request.Context(), userID)
+	group, agent, err := h.conversationSvc.EnsureSession(c.Request.Context(), userID)
 	if err != nil {
 		respondAPIError(c, err)
 		return
@@ -91,34 +88,29 @@ func (h *customerServiceHandler) getSession(c *gin.Context) {
 		Data: customerServiceSessionResponse{
 			GroupID:  group.ID,
 			Agent:    toCustomerServiceAgent(agent),
-			IsOnline: agent.Status == model.UserStatusActive,
+			IsOnline: agent != nil && agent.Status == model.UserStatusActive,
 		},
 	})
 }
 
-// listMessages 获取客服会话历史消息。
+// listMessages 获取当前客服会话历史消息（兼容旧接口）。
 func (h *customerServiceHandler) listMessages(c *gin.Context) {
 	userID := getUserIDFromContext(c)
-	page, pageSize := parsePagination(c)
-
-	var beforeID *uint64
-	if raw := strings.TrimSpace(c.Query("beforeId")); raw != "" {
-		if parsed, err := strconv.ParseUint(raw, 10, 64); err == nil {
-			beforeID = &parsed
-		}
+	if userID == 0 {
+		respondAPIError(c, apierr.Unauthorized("unauthorized"))
+		return
 	}
 
-	group, _, err := h.ensureSession(c.Request.Context(), userID)
+	page, pageSize := parsePagination(c)
+	beforeID := parseBeforeMessageID(c)
+
+	group, _, err := h.conversationSvc.EnsureSession(c.Request.Context(), userID)
 	if err != nil {
 		respondAPIError(c, err)
 		return
 	}
 
-	messages, total, err := h.chatSvc.ListMessages(c.Request.Context(), userID, group.ID, chatservice.ListMessagesOptions{
-		Page:     page,
-		PageSize: pageSize,
-		BeforeID: beforeID,
-	})
+	messages, total, err := h.conversationSvc.ListMessages(c.Request.Context(), userID, group.ID, page, pageSize, beforeID)
 	if err != nil {
 		respondAPIError(c, err)
 		return
@@ -126,28 +118,7 @@ func (h *customerServiceHandler) listMessages(c *gin.Context) {
 
 	normalized := make([]customerServiceMessageResponse, 0, len(messages))
 	for _, item := range messages {
-		content := strings.TrimSpace(item.Content)
-		if content == "" && item.ImageURL != "" {
-			content = item.ImageURL
-		}
-		normalized = append(normalized, customerServiceMessageResponse{
-			ID:          item.ID,
-			GroupID:     item.GroupID,
-			SenderID:    item.SenderID,
-			Content:     content,
-			MessageType: item.MessageType,
-			IsMe:        item.SenderID == userID,
-			CreatedAt:   item.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		})
-	}
-
-	sort.Slice(normalized, func(i, j int) bool {
-		return normalized[i].ID < normalized[j].ID
-	})
-
-	if len(normalized) > 0 {
-		last := normalized[len(normalized)-1]
-		_ = h.chatSvc.MarkRead(c.Request.Context(), group.ID, userID, last.ID)
+		normalized = append(normalized, toCustomerServiceMessageResponse(item))
 	}
 
 	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
@@ -166,9 +137,13 @@ func (h *customerServiceHandler) listMessages(c *gin.Context) {
 	})
 }
 
-// sendMessage 在客服会话中发送文本消息。
+// sendMessage 在当前客服会话中发送消息（兼容旧接口）。
 func (h *customerServiceHandler) sendMessage(c *gin.Context) {
 	userID := getUserIDFromContext(c)
+	if userID == 0 {
+		respondAPIError(c, apierr.Unauthorized("unauthorized"))
+		return
+	}
 
 	var req sendCustomerServiceMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -176,24 +151,13 @@ func (h *customerServiceHandler) sendMessage(c *gin.Context) {
 		return
 	}
 
-	content := strings.TrimSpace(req.Content)
-	if content == "" {
-		respondAPIError(c, apierr.BadRequest("content is required"))
-		return
-	}
-
-	group, _, err := h.ensureSession(c.Request.Context(), userID)
+	group, _, err := h.conversationSvc.EnsureSession(c.Request.Context(), userID)
 	if err != nil {
 		respondAPIError(c, err)
 		return
 	}
 
-	msg, err := h.chatSvc.SendMessage(c.Request.Context(), chatservice.SendMessageInput{
-		GroupID:     group.ID,
-		SenderID:    userID,
-		Content:     content,
-		MessageType: model.ChatMessageTypeText,
-	})
+	message, err := h.conversationSvc.SendMessage(c.Request.Context(), userID, group.ID, req.Content)
 	if err != nil {
 		respondAPIError(c, err)
 		return
@@ -203,164 +167,8 @@ func (h *customerServiceHandler) sendMessage(c *gin.Context) {
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",
-		Data: customerServiceMessageResponse{
-			ID:          msg.ID,
-			GroupID:     msg.GroupID,
-			SenderID:    msg.SenderID,
-			Content:     msg.Content,
-			MessageType: msg.MessageType,
-			IsMe:        true,
-			CreatedAt:   msg.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		},
+		Data:    toCustomerServiceMessageResponse(*message),
 	})
-}
-
-func (h *customerServiceHandler) ensureSession(ctx context.Context, userID uint64) (*model.ChatGroup, *model.User, error) {
-	agentIDs, err := h.resolveServiceAgentIDs(ctx, userID)
-	if err != nil {
-		return nil, nil, err
-	}
-	if len(agentIDs) == 0 {
-		return nil, nil, apierr.NotFound("no customer service agent available")
-	}
-
-	agentSet := make(map[uint64]struct{}, len(agentIDs))
-	for _, item := range agentIDs {
-		agentSet[item] = struct{}{}
-	}
-
-	groups, _, err := h.chatSvc.ListUserGroups(ctx, userID, 1, 100)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for _, group := range groups {
-		if group.GroupType != model.ChatGroupTypePrivate || !group.IsActive {
-			continue
-		}
-
-		var matchedAgentID uint64
-		for _, member := range group.Members {
-			if member.UserID == userID {
-				continue
-			}
-			if _, ok := agentSet[member.UserID]; ok {
-				matchedAgentID = member.UserID
-				break
-			}
-		}
-
-		if matchedAgentID == 0 {
-			continue
-		}
-
-		agent, getErr := h.userRepo.Get(ctx, matchedAgentID)
-		if getErr != nil {
-			continue
-		}
-
-		return &group, agent, nil
-	}
-
-	selectedAgentID := agentIDs[0]
-	created, err := h.chatSvc.CreateGroup(ctx, userID, selectedAgentID, chatservice.CreateGroupRequest{
-		TargetUserID: selectedAgentID,
-		GroupType:    model.ChatGroupTypePrivate,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	agent, err := h.userRepo.Get(ctx, selectedAgentID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return created, agent, nil
-}
-
-func (h *customerServiceHandler) resolveServiceAgentIDs(ctx context.Context, requesterID uint64) ([]uint64, error) {
-	type rankedAgent struct {
-		UserID    uint64
-		Priority  int
-		CreatedAt int64
-	}
-
-	priorityByUser := make(map[uint64]int)
-	rolePriority := []struct {
-		Slug     string
-		Priority int
-	}{
-		{Slug: string(model.RoleSlugCSAgent), Priority: 1},
-		{Slug: string(model.RoleSlugCSLeader), Priority: 2},
-		{Slug: string(model.RoleSlugCustomerService), Priority: 3},
-	}
-
-	if h.roleRepo != nil {
-		for _, item := range rolePriority {
-			role, err := h.roleRepo.GetBySlug(ctx, item.Slug)
-			if err != nil || role == nil {
-				continue
-			}
-
-			userIDs, err := h.roleRepo.GetUserIDsByRoleID(ctx, role.ID)
-			if err != nil {
-				continue
-			}
-
-			for _, userID := range userIDs {
-				if userID == 0 || userID == requesterID {
-					continue
-				}
-				if existing, ok := priorityByUser[userID]; !ok || item.Priority < existing {
-					priorityByUser[userID] = item.Priority
-				}
-			}
-		}
-	}
-
-	if len(priorityByUser) == 0 {
-		fallbackEmails := []string{"cs.agent@gamelink.com", "cs.leader@gamelink.com"}
-		for idx, email := range fallbackEmails {
-			user, err := h.userRepo.GetByEmail(ctx, email)
-			if err != nil || user == nil || user.ID == requesterID {
-				continue
-			}
-			priorityByUser[user.ID] = 10 + idx
-		}
-	}
-
-	ranked := make([]rankedAgent, 0, len(priorityByUser))
-	for userID, priority := range priorityByUser {
-		user, err := h.userRepo.Get(ctx, userID)
-		if err != nil || user == nil {
-			continue
-		}
-		if user.Status != model.UserStatusActive {
-			continue
-		}
-		ranked = append(ranked, rankedAgent{
-			UserID:    userID,
-			Priority:  priority,
-			CreatedAt: user.CreatedAt.Unix(),
-		})
-	}
-
-	sort.Slice(ranked, func(i, j int) bool {
-		if ranked[i].Priority != ranked[j].Priority {
-			return ranked[i].Priority < ranked[j].Priority
-		}
-		if ranked[i].CreatedAt != ranked[j].CreatedAt {
-			return ranked[i].CreatedAt < ranked[j].CreatedAt
-		}
-		return ranked[i].UserID < ranked[j].UserID
-	})
-
-	result := make([]uint64, 0, len(ranked))
-	for _, item := range ranked {
-		result = append(result, item.UserID)
-	}
-	return result, nil
 }
 
 func toCustomerServiceAgent(user *model.User) customerServiceAgentResponse {
@@ -380,5 +188,17 @@ func toCustomerServiceAgent(user *model.User) customerServiceAgentResponse {
 		Nickname:  nickname,
 		AvatarURL: user.AvatarURL,
 		Status:    string(user.Status),
+	}
+}
+
+func toCustomerServiceMessageResponse(item model.ConversationMessage) customerServiceMessageResponse {
+	return customerServiceMessageResponse{
+		ID:          item.ID,
+		GroupID:     item.GroupID,
+		SenderID:    item.SenderID,
+		Content:     item.Content,
+		MessageType: item.MessageType,
+		IsMe:        item.IsMe,
+		CreatedAt:   item.CreatedAt,
 	}
 }
