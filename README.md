@@ -92,8 +92,8 @@ docker compose -f docker-compose.dev.yml up -d
 cd api
 go mod download
 go run main.go
-# 服务运行在 http://localhost:8080
-# Swagger 文档：http://localhost:8080/swagger/index.html
+# 服务运行在 http://localhost:8081
+# Swagger 文档：http://localhost:8081/swagger/index.html
 ```
 
 **管理后台：**
@@ -165,7 +165,7 @@ npm run dev
 后端启动后访问 Swagger：
 
 ```
-http://localhost:8080/swagger/index.html
+http://localhost:8081/swagger/index.html
 ```
 
 API 基础路径：`/api/v1`

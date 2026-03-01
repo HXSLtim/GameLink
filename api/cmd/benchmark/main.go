@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	url := flag.String("url", "http://localhost:8080/api/v1/healthz", "URL to benchmark")
+	url := flag.String("url", "http://localhost:8081/api/v1/healthz", "URL to benchmark")
 	concurrency := flag.Int("c", 100, "Number of concurrent requests")
 	duration := flag.Int("d", 10, "Duration in seconds")
 	flag.Parse()

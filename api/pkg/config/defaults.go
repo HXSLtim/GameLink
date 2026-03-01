@@ -14,7 +14,7 @@ import (
 // Default constants for safe configuration values
 const (
 	// Server defaults
-	DefaultPort          = "8080"
+	DefaultPort          = "8081"
 	DefaultEnableSwagger = true
 
 	// Database defaults

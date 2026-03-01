@@ -1778,8 +1778,8 @@ func TestPaymentService_CreatePayment_ThirdParty_ProductionUsesProviderCreateOrd
 
 	provider := &mockAlipayCreateOrderProvider{
 		result: map[string]interface{}{
-			"provider":       "alipay-real",
-			"order_token":    "tok_123",
+			"provider":        "alipay-real",
+			"order_token":     "tok_123",
 			"order_signature": "sig_abc",
 		},
 	}

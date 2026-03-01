@@ -2,7 +2,7 @@
 # 用于生产环境部署
 
 server:
-  port: "8080"
+  port: "8081"
   enable_swagger: false
 
 database:

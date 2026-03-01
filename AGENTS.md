@@ -1,128 +1,151 @@
-# CLAUDE.md
+# AGENTS.md - Backend Infrastructure Fix
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 🎯 Your Task
+Fix backend infrastructure issues to prepare for frontend-backend integration.
 
-## Project Overview
+## 📋 Task List
 
-GameLink is a gaming companion platform with three applications:
-- **api/**: Go backend (Gin + GORM) - port 8080
-- **admin/**: React admin panel (Ant Design) - port 5173
-- **app/**: React user web app (shadcn/ui + Tailwind) - port 5175
+### Task 1: Fix Port Conflict (0.5 day)
+**Problem**: Backend default port 8080 conflicts with admin frontend dev server.
 
-## Commands
+**Solution**:
+- Modify `api/cmd/main.go` to change default port from `:8080` to `:8081`
+- Update any related configuration files
+- Update documentation if needed (README.md, docker-compose files)
 
-### Go Backend (api/)
+**Files to modify**:
+- `api/cmd/main.go`
+- `docker-compose.yml` (if port mapping exists)
+- `docker-compose.dev.yml` (if port mapping exists)
+
+### Task 2: Standardize DTO Models (1 day)
+**Problem**: Some handlers use models directly instead of dedicated DTOs, causing:
+- Data leakage risk
+- API instability
+- Unclear contract between frontend and backend
+
+**Solution**:
+Create dedicated DTO models in `api/internal/handler/admin/dto/`:
+
+**Priority modules** (start with these):
+1. Extend `api/internal/handler/admin/dto/player.go` if missing batch DTOs
+2. Extend `api/internal/handler/admin/dto/order.go` if missing batch DTOs
+
+**DTO Pattern to Follow** (根据项目规范):
+```go
+// api/internal/handler/admin/dto/batch.go
+package dto
+
+import "gamelink/internal/model"
+
+// BatchRoleUpdateRequest 批量修改角色请求
+type BatchRoleUpdateRequest struct {
+    UserIDs []uint64     `json:"userIds" binding:"required,min=1,max=100"`
+    Role    model.Role   `json:"role" binding:"required,oneof=user player admin"`
+}
+
+// BatchOperationResponse 批量操作响应
+type BatchOperationResponse struct {
+    Success bool              `json:"success"`
+    Message string            `json:"message"`
+    Data    BatchOperationResult `json:"data"`
+}
+
+// BatchOperationResult 批量操作结果
+type BatchOperationResult struct {
+    Updated int          `json:"updated"`
+    Failed  int          `json:"failed"`
+    Errors  []BatchError `json:"errors"`
+}
+
+// BatchError 批量操作错误
+type BatchError struct {
+    UserID uint64 `json:"userId"`
+    Reason string `json:"reason"`
+}
+```
+
+**Files to create/modify**:
+- Create: `api/internal/handler/admin/dto/batch.go`
+- Modify: `api/internal/handler/admin/user.go` (add batch methods)
+
+## 🚫 Files to NOT Touch
+- `api/internal/handler/user/**` (User-facing endpoints)
+- `api/internal/handler/player/**` (Player endpoints)
+- `api/internal/ws/**` (WebSocket handlers - Agent 3's domain)
+- Frontend code in `admin/` or `app/`
+
+## 📐 Patterns to Follow (遵循项目代码规范)
+
+### Port Configuration
+```go
+// api/cmd/main.go
+func main() {
+    port := os.Getenv("APP_PORT")
+    if port == "" {
+        port = "8081" // Changed from 8080
+    }
+    r.Run(":" + port)
+}
+```
+
+### Handler Pattern (使用项目现有模式)
+```go
+// BatchRoleUpdate
+// @Summary      批量修改用户角色
+// @Description  批量修改用户角色
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dto.BatchRoleUpdateRequest  true  "批量修改角色请求"
+// @Success      200      {object}  dto.BatchOperationResponse
+// @Router       /admin/users/batch/role [post]
+func (h *UserHandler) BatchRoleUpdate(c *gin.Context) {
+    var req dto.BatchRoleUpdateRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        respondError(c, apierr.BadRequest("参数错误").WithDetails(err.Error()))
+        return
+    }
+
+    result, err := h.svc.BatchRoleUpdate(c.Request.Context(), &req)
+    if err != nil {
+        respondError(c, err)
+        return
+    }
+    respondSuccess(c, result)
+}
+```
+
+## ✅ Success Criteria
+- [ ] Backend starts on port 8081 by default
+- [ ] Batch DTOs created in `api/internal/handler/admin/dto/`
+- [ ] All existing tests still pass: `cd api && make test`
+- [ ] Code follows existing patterns in codebase
+- [ ] Swagger docs updated: `cd api && make swagger`
+
+## 🧪 Testing
 ```bash
-make test              # Run all tests
-make test-coverage     # Tests with coverage
-make lint              # golangci-lint
-make fmt               # Format code
-make check             # fmt + vet + lint + test
-make swagger           # Generate Swagger docs
-make run-test PKG=pkg  # Test specific package
+cd api
+
+# Run all tests
+make test
+
+# Generate swagger docs
+make swagger
+
+# Check code quality
+make check
 ```
 
-### Frontend (admin/ and app/)
-```bash
-pnpm dev      # Start dev server
-pnpm build    # Production build
-pnpm lint     # ESLint
-pnpm test     # Vitest tests
-```
+## 📚 Reference
+- Existing DTO pattern: `api/internal/handler/admin/dto/user.go`
+- Handler pattern: `api/internal/handler/admin/user.go`
+- Error handling: `gamelink/pkg/apierr`
+- CLAUDE.md for coding standards
 
-### Docker
-```bash
-docker compose up -d                    # PostgreSQL + Redis
-docker compose -f docker-compose.dev.yml up -d  # Full dev environment
-```
-
-## Architecture
-
-### Backend (api/)
-
-**Layered architecture:**
-```
-Handler (HTTP) → Service (Business Logic) → Repository (Data Access) → Model
-```
-
-**Key directories:**
-- `internal/handler/` - HTTP handlers (admin/user/player/public groups)
-- `internal/service/` - Business logic (57 modules)
-- `internal/repository/` - Data access (56 modules)
-- `internal/model/` - Data models (67 models)
-- `internal/router/` - Route registration
-- `internal/ws/` - WebSocket for real-time chat
-- `pkg/` - Shared packages (auth, config, db, scheduler)
-
-**API routes:**
-| Prefix | Description | Auth |
-|--------|-------------|------|
-| `/api/v1/auth` | Login, register, refresh | Partial |
-| `/api/v1/public` | Public endpoints | None |
-| `/api/v1/user` | User endpoints | Required |
-| `/api/v1/player` | Player endpoints | Required |
-| `/api/v1/admin` | Admin endpoints | Required + RBAC |
-
-### Frontend (admin/)
-
-- **UI**: Ant Design 6
-- **State**: Zustand
-- **Testing**: Vitest + Playwright
-- **Pages**: 40+ modules in `src/pages/`
-
-### Frontend (app/)
-
-- **UI**: shadcn/ui (Radix UI + Tailwind CSS 4)
-- **State**: Zustand
-- **Structure**:
-  - `src/features/` - Business pages
-  - `src/components/` - UI components
-  - `src/services/` - API layer
-  - `src/hooks/` - Custom hooks
-
-## Code Style
-
-### Go (api/)
-- **Architecture**: Handler → Service → Repository pattern
-- **Linter**: golangci-lint (govet, gofmt, goimports, gocyclo, typecheck, errcheck, dupl)
-- **Complexity**: Max cyclomatic complexity 15
-- **Imports**: Local prefix `gamelink` for goimports
-- **Formatting**: gofmt with simplify enabled
-- **Error handling**: Proper error returns, custom errors
-- **Middleware**: For auth, logging, cross-cutting concerns
-- **Testing**: testify package
-
-### TypeScript (admin/ & app/)
-- **Strict mode**: Enabled in tsconfig
-- **Linter**: ESLint (typescript-eslint, react-hooks, react-refresh)
-- **Formatter**: Prettier
-  - semi: true, singleQuote: true, tabWidth: 2, printWidth: 100, trailingComma: es5
-- **Types**:
-  - `interface` for objects, `type` for unions/intersections
-  - Avoid `any`, use `unknown` or generics
-  - Use type guards over type assertions (`as`)
-- **Package manager**: pnpm
-- **Unused vars**: Prefix with `_` to ignore
-
-## Database
-
-- PostgreSQL 16+ with 80+ tables
-- Redis 7+ for caching
-- GORM for ORM
-- Key features: RBAC, multi-tenancy, covering indexes
-
-## Testing
-
-- **Backend**: 159 test files, 70%+ coverage target
-- **Admin**: 88 unit tests
-- **CI**: GitHub Actions with quality gates
-
-## Default Credentials
-
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | admin@gamelink.com | Admin123456 |
-
-## Swagger
-
-After starting backend: http://localhost:8080/swagger/index.html
+## 💡 Notes
+- 使用中文注释和错误消息
+- 遵循项目现有的 DTO 模式
+- 使用 `gamelink` 模块前缀
+- 使用 `apierr` 包处理错误

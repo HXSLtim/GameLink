@@ -15,7 +15,7 @@ import (
 func TestHandleDisputeSLA2hBreach_CreateAlertWhenBreached(t *testing.T) {
 	repo := &fakeAlertRepo{}
 	scheduler := &BusinessScheduler{
-		logger:   slog.Default(),
+		logger:    slog.Default(),
 		alertRepo: repo,
 	}
 
@@ -33,7 +33,7 @@ func TestHandleDisputeSLA2hBreach_CreateAlertWhenBreached(t *testing.T) {
 func TestHandleDisputeSLA2hBreach_SkipWhenNoBreach(t *testing.T) {
 	repo := &fakeAlertRepo{}
 	scheduler := &BusinessScheduler{
-		logger:   slog.Default(),
+		logger:    slog.Default(),
 		alertRepo: repo,
 	}
 
@@ -45,7 +45,7 @@ func TestHandleDisputeSLA2hBreach_SkipWhenNoBreach(t *testing.T) {
 func TestHandleDisputeSLA2hBreach_AlertCreateError(t *testing.T) {
 	repo := &fakeAlertRepo{createErr: errors.New("db down")}
 	scheduler := &BusinessScheduler{
-		logger:   slog.Default(),
+		logger:    slog.Default(),
 		alertRepo: repo,
 	}
 

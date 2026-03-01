@@ -59,6 +59,17 @@ type PlayerListResponse struct {
 	TotalPages int              `json:"totalPages"`
 }
 
+// BatchUpdatePlayerStatusRequest 批量更新陪玩师审核状态请求
+type BatchUpdatePlayerStatusRequest struct {
+	PlayerIDs []string                 `json:"playerIds" binding:"required,min=1,max=100"`
+	Status    model.VerificationStatus `json:"status" binding:"required,oneof=pending verified rejected"`
+}
+
+// BatchDeletePlayersRequest 批量删除陪玩师请求
+type BatchDeletePlayersRequest struct {
+	PlayerIDs []string `json:"playerIds" binding:"required,min=1,max=100"`
+}
+
 // ==================== 转换函数 ====================
 
 // ToPlayerResponse 将 model.Player 转换为 PlayerResponse

@@ -1,7 +1,7 @@
 # Staging环境配置文件（本地生产模拟，不加密）
 
 server:
-  port: "8080"
+  port: "8081"
   enable_swagger: false
 
 database:

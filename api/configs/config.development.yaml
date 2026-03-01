@@ -2,7 +2,7 @@
 # 用于本地开发和测试
 
 server:
-  port: "8080"
+  port: "8081"
   enable_swagger: true
 
 database:

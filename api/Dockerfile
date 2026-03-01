@@ -9,7 +9,7 @@
 #   docker build -t gamelink-backend:v1.0.0 --build-arg VERSION=v1.0.0 .
 #
 # 运行示例:
-#   docker run -p 8080:8080 --env-file .env gamelink-backend:latest
+#   docker run -p 8081:8081 --env-file .env gamelink-backend:latest
 
 # =============================================================================
 # Stage 1: Builder
@@ -124,15 +124,15 @@ USER gamelink
 
 # 环境变量
 ENV APP_ENV=production \
-    SERVICE_PORT=8080 \
+    SERVICE_PORT=8081 \
     GIN_MODE=release
 
 # 暴露端口
-EXPOSE 8080
+EXPOSE 8081
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/healthz || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8081/api/v1/healthz || exit 1
 
 # 启动应用
 CMD ["/app/server"]

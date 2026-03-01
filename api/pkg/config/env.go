@@ -252,7 +252,7 @@ func Load() AppConfig {
 	}
 
 	cfg := AppConfig{
-		Port:          "8080",
+		Port:          DefaultPort,
 		EnableSwagger: true,
 		Database: DatabaseConfig{
 			Type: defaultDBType,
