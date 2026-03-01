@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -12,6 +13,8 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/internal/repository/common"
+	"gamelink/pkg/apierr"
 	"gamelink/pkg/logging"
 )
 
@@ -37,6 +40,36 @@ type UpdateUserInput struct {
 	Role      model.Role
 	Status    model.UserStatus
 	Password  *string
+}
+
+// BatchUpdateUsersRoleInput defines batch role update payload.
+type BatchUpdateUsersRoleInput struct {
+	UserIDs []uint64
+	Role    model.Role
+}
+
+// BatchUpdateUsersStatusInput defines batch status update payload.
+type BatchUpdateUsersStatusInput struct {
+	UserIDs []uint64
+	Status  model.UserStatus
+	Reason  string
+}
+
+// BatchAddUsersPointsInput defines batch points update payload.
+type BatchAddUsersPointsInput struct {
+	UserIDs []uint64
+	Cents   int64
+	Reason  string
+}
+
+// BatchNotifyUsersInput defines batch notification payload.
+type BatchNotifyUsersInput struct {
+	UserIDs   []uint64
+	Title     string
+	Content   string
+	Priority  model.NotificationPriority
+	Channel   string
+	Reference string
 }
 
 // ListUsers 返回全部用户。
@@ -307,6 +340,335 @@ func (s *AdminService) UpdateUserRole(ctx context.Context, id uint64, role model
 	s.invalidateCache(ctx, cacheKeyUsers)
 	s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionUpdateRole), map[string]any{"role": user.Role})
 	return user, nil
+}
+
+// BatchUpdateUsersRole 批量更新用户角色。
+func (s *AdminService) BatchUpdateUsersRole(ctx context.Context, input BatchUpdateUsersRoleInput) (*BatchOperationResponse, error) {
+	if !isValidUserRole(input.Role) {
+		return nil, apierr.BadRequest("invalid role")
+	}
+
+	response, usersByID, validIDs, err := s.prepareBatchUsers(ctx, input.UserIDs)
+	if err != nil {
+		return nil, err
+	}
+	if len(validIDs) == 0 {
+		return response, nil
+	}
+	if s.tx == nil {
+		return nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
+		for _, userID := range validIDs {
+			current := usersByID[userID]
+			updated := *current
+			updated.Role = input.Role
+			if err := r.Users.Update(ctx, &updated); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, userID := range validIDs {
+		response.SuccessItems = append(response.SuccessItems, userID)
+		response.SuccessCount++
+		s.appendLogAsync(ctx, string(model.OpEntityUser), userID, string(model.OpActionUpdateRole), map[string]any{
+			"role":  input.Role,
+			"batch": true,
+		})
+		if syncErr := s.syncUserRoleToTable(ctx, userID, input.Role); syncErr != nil {
+			slog.Warn("failed to sync user_role in batch role update", slog.Uint64("user_id", userID), slog.String("error", syncErr.Error()))
+		}
+	}
+
+	s.invalidateCache(ctx, cacheKeyUsers)
+	return response, nil
+}
+
+// BatchUpdateUsersStatus 批量更新用户状态。
+func (s *AdminService) BatchUpdateUsersStatus(ctx context.Context, input BatchUpdateUsersStatusInput) (*BatchOperationResponse, error) {
+	if !isValidUserStatus(input.Status) {
+		return nil, apierr.BadRequest("invalid status")
+	}
+
+	response, usersByID, validIDs, err := s.prepareBatchUsers(ctx, input.UserIDs)
+	if err != nil {
+		return nil, err
+	}
+	if len(validIDs) == 0 {
+		return response, nil
+	}
+	if s.tx == nil {
+		return nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	reason := strings.TrimSpace(input.Reason)
+	now := time.Now()
+	actorUserID, hasActor := logging.ActorUserIDFromContext(ctx)
+
+	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
+		for _, userID := range validIDs {
+			current := usersByID[userID]
+			updated := *current
+			updated.Status = input.Status
+
+			if input.Status == model.UserStatusBanned {
+				updated.BanReason = reason
+				updated.BannedAt = &now
+				if hasActor {
+					actor := actorUserID
+					updated.BannedBy = &actor
+				} else {
+					updated.BannedBy = nil
+				}
+			} else {
+				updated.BanReason = ""
+				updated.BannedAt = nil
+				updated.BannedBy = nil
+			}
+
+			if err := r.Users.Update(ctx, &updated); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, userID := range validIDs {
+		response.SuccessItems = append(response.SuccessItems, userID)
+		response.SuccessCount++
+		s.appendLogAsync(ctx, string(model.OpEntityUser), userID, string(model.OpActionUpdateStatus), map[string]any{
+			"status": input.Status,
+			"reason": reason,
+			"batch":  true,
+		})
+	}
+
+	s.invalidateCache(ctx, cacheKeyUsers)
+	return response, nil
+}
+
+// BatchAddUsersPoints 批量增加用户积分（钱包余额，单位分）。
+func (s *AdminService) BatchAddUsersPoints(ctx context.Context, input BatchAddUsersPointsInput) (*BatchOperationResponse, error) {
+	if input.Cents <= 0 {
+		return nil, apierr.BadRequest("cents must be greater than zero")
+	}
+
+	response, _, validIDs, err := s.prepareBatchUsers(ctx, input.UserIDs)
+	if err != nil {
+		return nil, err
+	}
+	if len(validIDs) == 0 {
+		return response, nil
+	}
+	if s.tx == nil {
+		return nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	reason := strings.TrimSpace(input.Reason)
+	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
+		for _, userID := range validIDs {
+			wallet, getErr := r.Wallets.GetByUserID(ctx, userID)
+			if getErr != nil {
+				if errors.Is(getErr, repository.ErrNotFound) {
+					wallet = &model.Wallet{
+						UserID:       userID,
+						BalanceCents: input.Cents,
+						FrozenCents:  0,
+						Version:      1,
+					}
+					if saveErr := r.Wallets.Save(ctx, wallet); saveErr != nil {
+						return saveErr
+					}
+					continue
+				}
+				return getErr
+			}
+
+			wallet.BalanceCents += input.Cents
+			if saveErr := r.Wallets.Save(ctx, wallet); saveErr != nil {
+				return saveErr
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, userID := range validIDs {
+		response.SuccessItems = append(response.SuccessItems, userID)
+		response.SuccessCount++
+		s.appendLogAsync(ctx, string(model.OpEntityUser), userID, string(model.OpActionUpdate), map[string]any{
+			"points_delta_cents": input.Cents,
+			"reason":             reason,
+			"batch":              true,
+		})
+	}
+
+	s.invalidateCache(ctx, cacheKeyUsers)
+	return response, nil
+}
+
+// BatchNotifyUsers 批量发送站内通知。
+func (s *AdminService) BatchNotifyUsers(ctx context.Context, input BatchNotifyUsersInput) (*BatchOperationResponse, error) {
+	title := strings.TrimSpace(input.Title)
+	content := strings.TrimSpace(input.Content)
+	if title == "" || content == "" {
+		return nil, apierr.BadRequest("title and content are required")
+	}
+	if !isValidNotificationPriority(input.Priority) {
+		return nil, apierr.BadRequest("invalid notification priority")
+	}
+
+	response, _, validIDs, err := s.prepareBatchUsers(ctx, input.UserIDs)
+	if err != nil {
+		return nil, err
+	}
+	if len(validIDs) == 0 {
+		return response, nil
+	}
+	if s.tx == nil {
+		return nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	channel := strings.TrimSpace(input.Channel)
+	if channel == "" {
+		channel = "web"
+	}
+	reference := strings.TrimSpace(input.Reference)
+	if reference == "" {
+		reference = "admin_batch_notify"
+	}
+
+	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
+		for _, userID := range validIDs {
+			event := &model.NotificationEvent{
+				UserID:        userID,
+				Title:         title,
+				Message:       content,
+				Channel:       channel,
+				Priority:      input.Priority,
+				ReferenceType: reference,
+			}
+			if createErr := r.Notifications.Create(ctx, event); createErr != nil {
+				return createErr
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, userID := range validIDs {
+		response.SuccessItems = append(response.SuccessItems, userID)
+		response.SuccessCount++
+		s.appendLogAsync(ctx, string(model.OpEntityUser), userID, string(model.OpActionCreate), map[string]any{
+			"notification_title": title,
+			"priority":           input.Priority,
+			"batch":              true,
+		})
+	}
+
+	return response, nil
+}
+
+func (s *AdminService) prepareBatchUsers(ctx context.Context, ids []uint64) (*BatchOperationResponse, map[uint64]*model.User, []uint64, error) {
+	normalizedIDs := normalizeBatchUserIDs(ids)
+	response := &BatchOperationResponse{
+		SuccessCount: 0,
+		FailedCount:  0,
+		TotalCount:   len(normalizedIDs),
+		FailedItems:  make([]BatchErrorItem, 0),
+		SuccessItems: make([]uint64, 0),
+	}
+
+	if len(normalizedIDs) == 0 {
+		return nil, nil, nil, apierr.BadRequest("user ids is required")
+	}
+	if len(normalizedIDs) > 1000 {
+		return nil, nil, nil, apierr.BadRequest("maximum 1000 users per batch")
+	}
+
+	users, err := s.users.GetByIDs(ctx, normalizedIDs)
+	if err != nil {
+		return nil, nil, nil, WrapError(err, "load users")
+	}
+
+	usersByID := make(map[uint64]*model.User, len(users))
+	for i := range users {
+		usersByID[users[i].ID] = &users[i]
+	}
+
+	validIDs := make([]uint64, 0, len(normalizedIDs))
+	for _, userID := range normalizedIDs {
+		if _, exists := usersByID[userID]; !exists {
+			response.FailedCount++
+			response.FailedItems = append(response.FailedItems, BatchErrorItem{
+				ID:      userID,
+				Message: fmt.Sprintf("user %d not found", userID),
+			})
+			continue
+		}
+		validIDs = append(validIDs, userID)
+	}
+
+	return response, usersByID, validIDs, nil
+}
+
+func normalizeBatchUserIDs(ids []uint64) []uint64 {
+	if len(ids) == 0 {
+		return []uint64{}
+	}
+	seen := make(map[uint64]struct{}, len(ids))
+	result := make([]uint64, 0, len(ids))
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		if _, exists := seen[id]; exists {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
+func isValidUserRole(role model.Role) bool {
+	switch role {
+	case model.RoleUser, model.RolePlayer, model.RoleAdmin:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidUserStatus(status model.UserStatus) bool {
+	switch status {
+	case model.UserStatusActive, model.UserStatusSuspended, model.UserStatusBanned:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidNotificationPriority(priority model.NotificationPriority) bool {
+	switch priority {
+	case model.NotificationPriorityLow, model.NotificationPriorityNormal, model.NotificationPriorityHigh:
+		return true
+	default:
+		return false
+	}
 }
 
 func validateUserInput(name string, role model.Role, status model.UserStatus, password string) error {

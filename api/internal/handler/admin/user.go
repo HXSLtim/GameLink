@@ -271,6 +271,127 @@ func (h *UserHandler) BatchDeleteUsers(c *gin.Context) {
 	})
 }
 
+// BatchUpdateUsersRole
+// @Summary      批量更新用户角色
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  dto.BatchUpdateUserRoleRequest  true  "批量角色更新请求"
+// @Success      200  {object}  adminservice.BatchOperationResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/users/batch/role [post]
+func (h *UserHandler) BatchUpdateUsersRole(c *gin.Context) {
+	var payload dto.BatchUpdateUserRoleRequest
+	if !ValidateAndRespond(c, &payload) {
+		return
+	}
+
+	result, err := h.svc.BatchUpdateUsersRole(contextWithActor(c), adminservice.BatchUpdateUsersRoleInput{
+		UserIDs: payload.UserIDs,
+		Role:    model.Role(payload.Role),
+	})
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchUpdateUsersStatus
+// @Summary      批量更新用户状态
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  dto.BatchUpdateUserStatusRequest  true  "批量状态更新请求"
+// @Success      200  {object}  adminservice.BatchOperationResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/users/batch/status [post]
+func (h *UserHandler) BatchUpdateUsersStatus(c *gin.Context) {
+	var payload dto.BatchUpdateUserStatusRequest
+	if !ValidateAndRespond(c, &payload) {
+		return
+	}
+
+	result, err := h.svc.BatchUpdateUsersStatus(contextWithActor(c), adminservice.BatchUpdateUsersStatusInput{
+		UserIDs: payload.UserIDs,
+		Status:  model.UserStatus(payload.Status),
+		Reason:  payload.Reason,
+	})
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchAddUsersPoints
+// @Summary      批量增加用户积分
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  dto.BatchAddUsersPointsRequest  true  "批量积分更新请求"
+// @Success      200  {object}  adminservice.BatchOperationResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/users/batch/points [post]
+func (h *UserHandler) BatchAddUsersPoints(c *gin.Context) {
+	var payload dto.BatchAddUsersPointsRequest
+	if !ValidateAndRespond(c, &payload) {
+		return
+	}
+
+	result, err := h.svc.BatchAddUsersPoints(contextWithActor(c), adminservice.BatchAddUsersPointsInput{
+		UserIDs: payload.UserIDs,
+		Cents:   payload.Cents,
+		Reason:  payload.Reason,
+	})
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchNotifyUsers
+// @Summary      批量发送用户通知
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  dto.BatchNotifyUsersRequest  true  "批量通知请求"
+// @Success      200  {object}  adminservice.BatchOperationResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/users/batch/notify [post]
+func (h *UserHandler) BatchNotifyUsers(c *gin.Context) {
+	var payload dto.BatchNotifyUsersRequest
+	if !ValidateAndRespond(c, &payload) {
+		return
+	}
+
+	priority := model.NotificationPriority(payload.Priority)
+	if priority == "" {
+		priority = model.NotificationPriorityNormal
+	}
+
+	result, err := h.svc.BatchNotifyUsers(contextWithActor(c), adminservice.BatchNotifyUsersInput{
+		UserIDs:  payload.UserIDs,
+		Title:    payload.Title,
+		Content:  payload.Content,
+		Priority: priority,
+	})
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
 // ListUserLogs
 // @Summary      获取用户操作日志
 // @Tags         Admin/Users
