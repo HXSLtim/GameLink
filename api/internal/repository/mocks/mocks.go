@@ -1449,6 +1449,51 @@ func (mr *MockStatsRepositoryMockRecorder) TopPlayers(ctx, limit interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TopPlayers", reflect.TypeOf((*MockStatsRepository)(nil).TopPlayers), ctx, limit)
 }
 
+// UserActivityTrend mocks base method.
+func (m *MockStatsRepository) UserActivityTrend(ctx context.Context, days int) ([]repository.DateValue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserActivityTrend", ctx, days)
+	ret0, _ := ret[0].([]repository.DateValue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserActivityTrend indicates an expected call of UserActivityTrend.
+func (mr *MockStatsRepositoryMockRecorder) UserActivityTrend(ctx, days interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserActivityTrend", reflect.TypeOf((*MockStatsRepository)(nil).UserActivityTrend), ctx, days)
+}
+
+// UserBehaviorStats mocks base method.
+func (m *MockStatsRepository) UserBehaviorStats(ctx context.Context) (repository.UserBehaviorMetrics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserBehaviorStats", ctx)
+	ret0, _ := ret[0].(repository.UserBehaviorMetrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserBehaviorStats indicates an expected call of UserBehaviorStats.
+func (mr *MockStatsRepositoryMockRecorder) UserBehaviorStats(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserBehaviorStats", reflect.TypeOf((*MockStatsRepository)(nil).UserBehaviorStats), ctx)
+}
+
+// UserDistribution mocks base method.
+func (m *MockStatsRepository) UserDistribution(ctx context.Context) (repository.UserDistributionMetrics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserDistribution", ctx)
+	ret0, _ := ret[0].(repository.UserDistributionMetrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserDistribution indicates an expected call of UserDistribution.
+func (mr *MockStatsRepositoryMockRecorder) UserDistribution(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserDistribution", reflect.TypeOf((*MockStatsRepository)(nil).UserDistribution), ctx)
+}
+
 // UserGrowth mocks base method.
 func (m *MockStatsRepository) UserGrowth(ctx context.Context, days int) ([]repository.DateValue, error) {
 	m.ctrl.T.Helper()

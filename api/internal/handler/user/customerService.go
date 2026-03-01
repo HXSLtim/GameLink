@@ -70,6 +70,8 @@ func RegisterCustomerServiceRoutes(
 	group.GET("/session", h.getSession)
 	group.GET("/messages", h.listMessages)
 	group.POST("/messages", h.sendMessage)
+	group.GET("/conversations", h.listConversations)
+	group.POST("/conversations", h.createConversation)
 }
 
 // getSession 获取当前用户的客服会话（不存在时自动创建）。

@@ -183,6 +183,7 @@ func (r *Router) registerRoutes() {
 	if r.services != nil && r.services.wsHub != nil {
 		wsHandler := ws.NewHandler(r.services.wsHub)
 		api.GET("/ws", middleware.WSAuth(r.cfg.Auth.JWTSecret), wsHandler.ServeWS)
+		api.GET("/ws/customer-service", middleware.WSAuth(r.cfg.Auth.JWTSecret), wsHandler.ServeCustomerServiceWS)
 	}
 
 	// 陪玩端路由
