@@ -92,22 +92,38 @@ func getDashboardOverviewHandler(
 	ctx := c.Request.Context()
 	stats := &DashboardOverviewStats{}
 
-	users, _ := userRepo.List(ctx)
+	users, err := userRepo.List(ctx)
+	if err != nil {
+		respondError(c, apierr.InternalError("获取用户统计失败").WithDetails(err.Error()))
+		return
+	}
 	stats.TotalUsers = int64(len(users))
 
-	_, totalPlayers, _ := playerRepo.ListPaged(ctx, 1, 1)
+	_, totalPlayers, err := playerRepo.ListPaged(ctx, 1, 1)
+	if err != nil {
+		respondError(c, apierr.InternalError("获取陪玩统计失败").WithDetails(err.Error()))
+		return
+	}
 	stats.TotalPlayers = totalPlayers
 
-	orders, total, _ := orderRepo.List(ctx, repoiface.OrderListOptions{Page: 1, PageSize: 1})
+	orders, total, err := orderRepo.List(ctx, repoiface.OrderListOptions{Page: 1, PageSize: 1})
+	if err != nil {
+		respondError(c, apierr.InternalError("获取订单统计失败").WithDetails(err.Error()))
+		return
+	}
 	_ = orders
 	stats.TotalOrders = total
 
 	todayStart := time.Now().Truncate(24 * time.Hour)
-	todayOrders, todayTotal, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
+	todayOrders, todayTotal, err := orderRepo.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &todayStart,
 		Page:     1,
 		PageSize: 10000,
 	})
+	if err != nil {
+		respondError(c, apierr.InternalError("获取今日订单统计失败").WithDetails(err.Error()))
+		return
+	}
 	stats.TodayOrders = todayTotal
 
 	var todayRevenue int64
@@ -119,12 +135,16 @@ func getDashboardOverviewHandler(
 	stats.TodayRevenue = todayRevenue
 
 	monthStart := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Now().Location())
-	monthOrders, _, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
+	monthOrders, _, err := orderRepo.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &monthStart,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		Page:     1,
 		PageSize: 10000,
 	})
+	if err != nil {
+		respondError(c, apierr.InternalError("获取本月营收失败").WithDetails(err.Error()))
+		return
+	}
 	var monthRevenue int64
 	for _, order := range monthOrders {
 		monthRevenue += order.TotalPriceCents
@@ -132,19 +152,27 @@ func getDashboardOverviewHandler(
 	stats.MonthRevenue = monthRevenue
 
 	pendingStatus := model.WithdrawStatusPending
-	_, pendingTotal, _ := withdrawRepo.List(ctx, withdrawrepo.WithdrawListOptions{
+	_, pendingTotal, err := withdrawRepo.List(ctx, withdrawrepo.WithdrawListOptions{
 		Status:   &pendingStatus,
 		Page:     1,
 		PageSize: 1,
 	})
+	if err != nil {
+		respondError(c, apierr.InternalError("获取提现统计失败").WithDetails(err.Error()))
+		return
+	}
 	stats.PendingWithdraws = pendingTotal
 
 	isActive := true
-	_, activeTotal, _ := serviceItemRepo.List(ctx, repository.ServiceItemListOptions{
+	_, activeTotal, err := serviceItemRepo.List(ctx, repository.ServiceItemListOptions{
 		IsActive: &isActive,
 		Page:     1,
 		PageSize: 1,
 	})
+	if err != nil {
+		respondError(c, apierr.InternalError("获取服务统计失败").WithDetails(err.Error()))
+		return
+	}
 	stats.ActiveServices = activeTotal
 
 	respondSuccess(c, *stats)

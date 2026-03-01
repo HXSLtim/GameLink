@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"gamelink/internal/repository"
@@ -86,12 +87,15 @@ type AgeData struct {
 // UserBehaviorStats 用户行为统计
 // 返回DAU、平均在线时长、人均消费等指标
 func (s *StatsService) UserBehaviorStats(ctx context.Context) (*UserBehaviorStatsResponse, error) {
-	// Mock data implementation - real statistics will be implemented when analytics service is ready
-	// This requires: UserBehavior table, aggregation queries, caching layer
+	metrics, err := s.repo.UserBehaviorStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &UserBehaviorStatsResponse{
-		DAU:            1128,
-		AvgOnlineTime:  "45m",
-		AvgConsumption: 128.50,
+		DAU:            metrics.DAU,
+		AvgOnlineTime:  formatOnlineDuration(metrics.AvgOnlineDurationSecond),
+		AvgConsumption: metrics.AvgConsumptionCents / 100.0,
 	}, nil
 }
 
@@ -101,37 +105,50 @@ func (s *StatsService) UserActivityTrend(ctx context.Context, days int) ([]repos
 	if days <= 0 {
 		days = 7
 	}
-
-	// Mock data implementation - real trend analysis requires UserBehavior table aggregation
-	// Future: Query UserBehavior table with GROUP BY date, COUNT(DISTINCT user_id)
-	result := []repository.DateValue{
-		{Date: time.Now().AddDate(0, 0, -6).Format("2006-01-02"), Value: 4000},
-		{Date: time.Now().AddDate(0, 0, -5).Format("2006-01-02"), Value: 3000},
-		{Date: time.Now().AddDate(0, 0, -4).Format("2006-01-02"), Value: 2000},
-		{Date: time.Now().AddDate(0, 0, -3).Format("2006-01-02"), Value: 2780},
-		{Date: time.Now().AddDate(0, 0, -2).Format("2006-01-02"), Value: 1890},
-		{Date: time.Now().AddDate(0, 0, -1).Format("2006-01-02"), Value: 2390},
-		{Date: time.Now().Format("2006-01-02"), Value: 3490},
-	}
-
-	return result, nil
+	return s.repo.UserActivityTrend(ctx, days)
 }
 
 // UserDistribution 用户分布统计
 func (s *StatsService) UserDistribution(ctx context.Context) (*UserDistributionResponse, error) {
-	// Mock data implementation - real distribution analysis requires User table aggregation
-	// Future: Query User table with GROUP BY region/age, COUNT(*)
+	metrics, err := s.repo.UserDistribution(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	regionData := make([]RegionData, 0, len(metrics.ByRegion))
+	for _, item := range metrics.ByRegion {
+		regionData = append(regionData, RegionData{Name: item.Name, Value: item.Value})
+	}
+
+	ageData := make([]AgeData, 0, len(metrics.ByAge))
+	for _, item := range metrics.ByAge {
+		ageData = append(ageData, AgeData{Name: item.Name, Value: item.Value})
+	}
+
 	return &UserDistributionResponse{
-		ByRegion: []RegionData{
-			{Name: "北京", Value: 400},
-			{Name: "上海", Value: 300},
-			{Name: "广州", Value: 300},
-			{Name: "深圳", Value: 200},
-		},
-		ByAge: []AgeData{
-			{Name: "18-25岁", Value: 500},
-			{Name: "26-30岁", Value: 400},
-			{Name: "31-35岁", Value: 300},
-		},
+		ByRegion: regionData,
+		ByAge:    ageData,
 	}, nil
+}
+
+func formatOnlineDuration(seconds float64) string {
+	if seconds <= 0 {
+		return "0m"
+	}
+
+	minutes := int(seconds+30) / 60
+	if minutes <= 0 {
+		minutes = 1
+	}
+
+	if minutes < 60 {
+		return fmt.Sprintf("%dm", minutes)
+	}
+
+	hours := minutes / 60
+	remainMinutes := minutes % 60
+	if remainMinutes == 0 {
+		return fmt.Sprintf("%dh", hours)
+	}
+	return fmt.Sprintf("%dh%dm", hours, remainMinutes)
 }

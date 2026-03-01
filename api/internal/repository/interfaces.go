@@ -282,6 +282,9 @@ type StatsRepository interface {
 	Dashboard(ctx context.Context) (Dashboard, error)
 	RevenueTrend(ctx context.Context, days int) ([]DateValue, error)
 	UserGrowth(ctx context.Context, days int) ([]DateValue, error)
+	UserBehaviorStats(ctx context.Context) (UserBehaviorMetrics, error)
+	UserActivityTrend(ctx context.Context, days int) ([]DateValue, error)
+	UserDistribution(ctx context.Context) (UserDistributionMetrics, error)
 	OrdersByStatus(ctx context.Context) (map[string]int64, error)
 	TopPlayers(ctx context.Context, limit int) ([]PlayerTop, error)
 	AuditOverview(ctx context.Context, from, to *time.Time) (map[string]int64, map[string]int64, error)
@@ -599,6 +602,25 @@ type Dashboard struct {
 type DateValue struct {
 	Date  string `json:"date"`
 	Value int64  `json:"value"`
+}
+
+// UserBehaviorMetrics aggregates dashboard behavior metrics.
+type UserBehaviorMetrics struct {
+	DAU                     int64   `json:"dau"`
+	AvgOnlineDurationSecond float64 `json:"avgOnlineDurationSecond"`
+	AvgConsumptionCents     float64 `json:"avgConsumptionCents"`
+}
+
+// DistributionValue represents grouped user distribution data.
+type DistributionValue struct {
+	Name  string `json:"name"`
+	Value int64  `json:"value"`
+}
+
+// UserDistributionMetrics contains user distribution slices.
+type UserDistributionMetrics struct {
+	ByRegion []DistributionValue `json:"byRegion"`
+	ByAge    []DistributionValue `json:"byAge"`
 }
 
 // PlayerTop represents a leaderboard entry.
