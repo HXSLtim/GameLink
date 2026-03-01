@@ -60,7 +60,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #1890ff;
+  color: var(--ant-color-primary);
 }
 
 .logFooter {

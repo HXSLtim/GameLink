@@ -254,7 +254,7 @@ const RechargeRecords: React.FC<RecordsProps> = ({ onStatsUpdate }) => {
             width: 120,
             render: (_, record) => (
                 <div>
-                    <div style={{ fontWeight: 500, color: '#1890ff' }}>
+                    <div style={{ fontWeight: 500, color: 'var(--ant-color-primary)' }}>
                         ¥{(record.amountCents / 100).toFixed(2)}
                     </div>
                     {record.bonusCents > 0 && (
@@ -271,7 +271,7 @@ const RechargeRecords: React.FC<RecordsProps> = ({ onStatsUpdate }) => {
             key: 'totalCents',
             width: 100,
             render: (cents: number) => (
-                <div style={{ fontWeight: 500, color: '#52c41a' }}>
+                <div style={{ fontWeight: 500, color: 'var(--ant-color-success)' }}>
                     ¥{(cents / 100).toFixed(2)}
                 </div>
             ),
@@ -438,19 +438,19 @@ const RechargeRecords: React.FC<RecordsProps> = ({ onStatsUpdate }) => {
                             {currentRecord.option?.name || '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="充值金额">
-                            <span style={{ color: '#1890ff', fontWeight: 500 }}>
+                            <span style={{ color: 'var(--ant-color-primary)', fontWeight: 500 }}>
                                 ¥{(currentRecord.amountCents / 100).toFixed(2)}
                             </span>
                         </Descriptions.Item>
                         <Descriptions.Item label="赠送金额">
                             {currentRecord.bonusCents > 0 ? (
-                                <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                                <span style={{ color: 'var(--ant-color-success)', fontWeight: 500 }}>
                                     ¥{(currentRecord.bonusCents / 100).toFixed(2)}
                                 </span>
                             ) : '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="到账金额">
-                            <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                            <span style={{ color: 'var(--ant-color-success)', fontWeight: 500 }}>
                                 ¥{(currentRecord.totalCents / 100).toFixed(2)}
                             </span>
                         </Descriptions.Item>

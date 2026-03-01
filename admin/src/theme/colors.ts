@@ -8,19 +8,19 @@
 
 /**
  * GameLink 品牌色
- * 与移动端保持一致
+ * 统一走 Ant Design 主题变量，避免出现多套主色源。
  */
 export const brandColors = {
-  primary: '#7ACC35',      // 品牌绿色（KOOK 绿）
-  primaryLight: '#87D149', // 浅绿色
-  primaryDark: '#6DB72F',  // 深绿色
-  primaryGradient: 'linear-gradient(135deg, #7ACC35 0%, #6DB72F 100%)',
+  primary: 'var(--ant-color-primary)',
+  primaryLight: 'var(--ant-color-primary-hover)',
+  primaryDark: 'var(--ant-color-primary-active)',
+  primaryGradient: 'linear-gradient(135deg, var(--ant-color-primary) 0%, var(--ant-color-primary-active) 100%)',
 
-  gold: '#F59E0B',         // 金色（VIP/稀有）
-  goldGradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+  gold: 'var(--ant-color-warning)',
+  goldGradient: 'linear-gradient(135deg, var(--ant-color-warning) 0%, #d97706 100%)',
 
-  purple: '#722ED1',       // 紫色（陪玩）
-  cyan: '#13C2C2',         // 青色
+  purple: '#722ed1',
+  cyan: 'var(--ant-color-info)',
 } as const;
 
 /**
@@ -32,7 +32,7 @@ export const semanticColors = {
   primary: brandColors.primary,
   primaryHover: brandColors.primaryLight,
   primaryActive: brandColors.primaryDark,
-  primaryBg: 'rgba(122, 204, 53, 0.1)',
+  primaryBg: 'var(--ant-color-primary-bg)',
 
   // 功能色
   success: 'var(--ant-color-success)',
@@ -65,23 +65,23 @@ export const semanticColors = {
  */
 export const chartColors = {
   palette: [
-    '#0088FE', // 蓝色
-    '#00C49F', // 青色
-    '#FFBB28', // 黄色
-    '#FF8042', // 橙色
+    'var(--ant-color-primary)', // 蓝色主色
+    'var(--ant-color-info)', // 青色信息色
+    'var(--ant-color-warning)', // 黄色告警色
+    '#ff8042', // 橙色
     '#8884d8', // 紫色
-    '#82ca9d', // 绿色
+    'var(--ant-color-success)', // 绿色成功色
     '#ffc658', // 金色
-    '#ff7c7c', // 红色
+    'var(--ant-color-error)', // 红色错误色
   ],
 
-  // 语义化图表颜色（使用品牌色）
-  revenue: '#faad14',    // 收入 - 金色
-  users: '#7ACC35',     // 用户 - 品牌绿
-  orders: '#7ACC35',    // 订单 - 品牌绿
-  players: '#722ED1',   // 陪玩 - 紫色
-  games: '#13C2C2',     // 游戏 - 青色
-  vip: '#F59E0B',       // VIP - 金色
+  // 语义化图表颜色（跟随主题变量）
+  revenue: 'var(--ant-color-warning)',
+  users: 'var(--ant-color-primary)',
+  orders: 'var(--ant-color-primary)',
+  players: '#722ed1',
+  games: 'var(--ant-color-info)',
+  vip: 'var(--ant-color-warning)',
 } as const;
 
 /**
@@ -90,16 +90,16 @@ export const chartColors = {
  */
 export const statusColors = {
   // 订单状态
-  pending: '#faad14', // 待确认 - 金色
-  confirmed: '#1677ff', // 已确认 - 蓝色
-  in_progress: '#1677ff', // 进行中 - 蓝色
-  completed: '#52c41a', // 已完成 - 绿色
-  canceled: '#8c8c8c', // 已取消 - 灰色
-  refunded: '#ff4d4f', // 已退款 - 红色
+  pending: 'var(--ant-color-warning)',
+  confirmed: 'var(--ant-color-primary)',
+  in_progress: 'var(--ant-color-primary)',
+  completed: 'var(--ant-color-success)',
+  canceled: 'var(--ant-color-text-tertiary)',
+  refunded: 'var(--ant-color-error)',
 
   // 支付状态
-  paid: '#52c41a', // 已支付 - 绿色
-  failed: '#ff4d4f', // 支付失败 - 红色
+  paid: 'var(--ant-color-success)',
+  failed: 'var(--ant-color-error)',
 } as const;
 
 /**
@@ -112,7 +112,7 @@ export const iconBgColors = {
   warning: 'var(--ant-color-warning)',
   error: 'var(--ant-color-error)',
   purple: '#722ed1',
-  cyan: '#13c2c2',
+  cyan: 'var(--ant-color-info)',
   magenta: '#eb2f96',
   volcano: '#fa541c',
 } as const;

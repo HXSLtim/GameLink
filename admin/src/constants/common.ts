@@ -317,7 +317,7 @@ export const COLORS = {
     ERROR: '#ff4d4f',
 
     /** 信息颜色 */
-    INFO: '#1890ff',
+    INFO: 'var(--ant-color-primary)',
 } as const;
 
 // ============================================================================

@@ -70,26 +70,25 @@ export const ALERT_LEVEL_COLORS: Record<AlertLevel, string> = {
 // Chart Colors (品牌色，不受主题影响)
 // ============================================================================
 
-// 图表颜色通常需要保持品牌一致性，不受主题切换影响
-// 如果需要主题适配，请使用 theme.useToken() 在组件内部获取
+// 图表颜色统一对齐主题变量，避免与 ThemeContext 主色冲突
 export const CHART_COLORS = {
-  primary: '#1890ff',
-  secondary: '#52c41a',
-  warning: '#faad14',
-  danger: '#f5222d',
-  info: '#13c2c2',
-  success: '#52c41a',
+  primary: 'var(--ant-color-primary)',
+  secondary: 'var(--ant-color-success)',
+  warning: 'var(--ant-color-warning)',
+  danger: 'var(--ant-color-error)',
+  info: 'var(--ant-color-info)',
+  success: 'var(--ant-color-success)',
 };
 
 export const REVENUE_CHART_COLORS = {
-  revenue: '#1890ff',
-  netRevenue: '#52c41a',
+  revenue: 'var(--ant-color-primary)',
+  netRevenue: 'var(--ant-color-success)',
 };
 
 export const USER_GROWTH_CHART_COLORS = {
-  newUsers: '#1890ff',
-  totalUsers: '#52c41a',
-  anomaly: '#f5222d',
+  newUsers: 'var(--ant-color-primary)',
+  totalUsers: 'var(--ant-color-success)',
+  anomaly: 'var(--ant-color-error)',
 };
 
 // ============================================================================

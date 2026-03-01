@@ -184,7 +184,7 @@ const UserBehaviorPage: React.FC = () => {
                                         {distribution.regions.slice(0, 5).map((r, i) => (
                                             <li key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
                                                 <span>{r.name}</span>
-                                                <span style={{ color: '#1890ff' }}>{r.count}</span>
+                                                <span style={{ color: 'var(--ant-color-primary)' }}>{r.count}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -200,7 +200,7 @@ const UserBehaviorPage: React.FC = () => {
                                         {distribution.ageGroups.map((a, i) => (
                                             <li key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
                                                 <span>{a.range}</span>
-                                                <span style={{ color: '#52c41a' }}>{a.count}</span>
+                                                <span style={{ color: 'var(--ant-color-success)' }}>{a.count}</span>
                                             </li>
                                         ))}
                                     </ul>

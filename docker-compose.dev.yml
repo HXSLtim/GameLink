@@ -1,4 +1,4 @@
-# GameLink 开发环境 - 后端 + Admin Docker Compose
+# GameLink 开发环境 - 后端 + Admin + App Docker Compose
 # 使用方式: docker-compose -f docker-compose.dev.yml up -d
 # 
 # 前提: 先运行 docker-compose up -d 启动数据库服务
@@ -60,6 +60,23 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - gamelink-network
+
+  # 用户端前端
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      args:
+        NPM_REGISTRY: https://registry.npmmirror.com
+    container_name: gamelink-app
+    restart: unless-stopped
+    ports:
+      - "5175:80"
     depends_on:
       backend:
         condition: service_healthy

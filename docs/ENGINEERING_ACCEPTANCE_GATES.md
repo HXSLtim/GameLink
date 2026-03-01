@@ -1,6 +1,6 @@
 # 工程化验收门禁（Engineering Acceptance Gates）
 
-> 版本：v1.0  
+> 版本：v1.1  
 > 更新时间：2026-02-28
 
 ## 1. 目标
@@ -19,9 +19,11 @@
 ### Gate B：前端工程质量（阻断）
 
 - `npm run type-check`（app）
+- `npm run lint`（app）
+- `npm run test:run`（app）
 - `npm run build`（app）
 
-目标：用户端代码可类型检查、可构建。
+目标：用户端代码可类型检查、可静态检查、可单元测试、可构建。
 
 ### Gate C：后端可执行性（阻断）
 

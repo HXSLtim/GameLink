@@ -18,6 +18,7 @@ import {
 } from 'antd';
 import { vipApi } from '@/api/vip';
 import type { VIPLevel, CreateVIPLevelDto, UpdateVIPLevelDto } from '@/api/vip';
+import { GAMELINK_PRIMARY } from '@/theme';
 
 import { logger } from '@/utils/logger';
 const { Text } = Typography;
@@ -69,7 +70,7 @@ const LevelForm: React.FC<LevelFormProps> = ({ visible, level, onCancel, onSucce
                 monthlyCouponTemplateId: level.monthlyCouponTemplateId,
                 monthlyCouponCount: level.monthlyCouponCount,
                 iconUrl: level.iconUrl,
-                color: level.color || '#1890ff',
+                color: level.color || GAMELINK_PRIMARY.base,
                 sortOrder: level.sortOrder,
                 isDefault: level.isDefault,
                 isActive: level.isActive,
@@ -81,7 +82,7 @@ const LevelForm: React.FC<LevelFormProps> = ({ visible, level, onCancel, onSucce
                 expRequired: 0,
                 orderDiscount: 0,
                 monthlyCouponCount: 0,
-                color: '#1890ff',
+                color: GAMELINK_PRIMARY.base,
                 sortOrder: 0,
                 isDefault: false,
                 isActive: true,
@@ -278,7 +279,7 @@ const LevelForm: React.FC<LevelFormProps> = ({ visible, level, onCancel, onSucce
                             onClick={handleAddBenefit}
                             style={{
                                 padding: '0 16px',
-                                backgroundColor: '#1890ff',
+                                backgroundColor: GAMELINK_PRIMARY.base,
                                 color: '#fff',
                                 border: 'none',
                                 borderRadius: '0 6px 6px 0',

@@ -18,8 +18,8 @@ export type DebugUser = {
  */
 function parseDebugUsers(): DebugUser[] {
     if (import.meta.env.PROD) {
-        // 生产环境构建时报错
-        throw new Error('DEBUG_USERS must not be enabled in production. Set VITE_DEBUG_USERS=false');
+        // 生产环境禁用调试用户，避免运行时崩溃
+        return [];
     }
     
     // 优先使用环境变量

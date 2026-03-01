@@ -324,7 +324,7 @@ const CommissionPage: React.FC = () => {
                             value={stats?.totalCommissionCents ? stats.totalCommissionCents / 100 : 0}
                             precision={2}
                             prefix="¥"
-                            valueStyle={{ fontWeight: 600, color: '#7ACC35' }}
+                            valueStyle={{ fontWeight: 600, color: 'var(--ant-color-success)' }}
                         />
                     </Card>
                 </Col>
@@ -360,7 +360,7 @@ const CommissionPage: React.FC = () => {
                         <Statistic
                             title="完成订单数"
                             value={stats?.completedOrderCount || 0}
-                            valueStyle={{ fontWeight: 600, color: '#52c41a' }}
+                            valueStyle={{ fontWeight: 600, color: 'var(--ant-color-success)' }}
                         />
                     </Card>
                 </Col>
@@ -370,7 +370,7 @@ const CommissionPage: React.FC = () => {
             <Card
                 title={
                     <Space>
-                        <DollarOutlined style={{ color: '#7ACC35' }} />
+                        <DollarOutlined style={{ color: 'var(--ant-color-success)' }} />
                         <span style={{ fontSize: '15px', fontWeight: 500 }}>佣金规则</span>
                     </Space>
                 }

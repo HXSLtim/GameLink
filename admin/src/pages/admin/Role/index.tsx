@@ -174,7 +174,11 @@ const RolePage: React.FC = () => {
             width: 180,
             render: (text, record) => (
                 <Space>
-                    <SafetyCertificateOutlined style={{ color: record.isSystem ? '#1890ff' : '#52c41a' }} />
+                    <SafetyCertificateOutlined
+                        style={{
+                            color: record.isSystem ? 'var(--ant-color-primary)' : 'var(--ant-color-success)',
+                        }}
+                    />
                     <span style={{ fontWeight: 500 }}>{text}</span>
                     {record.isSystem && (
                         <Tooltip title="系统角色不可删除">

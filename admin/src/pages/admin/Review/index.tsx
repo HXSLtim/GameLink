@@ -607,7 +607,7 @@ const ReviewList: React.FC = () => {
       >
         <div style={{ marginBottom: 16 }}>
           <Text>
-            已选择 <Text strong style={{ color: '#1890ff' }}>
+            已选择 <Text strong style={{ color: 'var(--ant-color-primary)' }}>
               {selectedRowKeys.filter(key => reviews.find(r => r.id === key)?.status === 'pending').length}
             </Text> 条待审核评价
           </Text>

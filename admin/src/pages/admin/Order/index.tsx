@@ -720,7 +720,7 @@ const OrderPage: React.FC = () => {
                         </Form.Item>
                     )}
 
-                    <div style={{ color: '#1890ff', marginTop: 16 }}>
+                    <div style={{ color: 'var(--ant-color-primary)', marginTop: 16 }}>
                         ℹ️ 提示：此操作将完成所有符合条件的订单
                     </div>
                 </Form>

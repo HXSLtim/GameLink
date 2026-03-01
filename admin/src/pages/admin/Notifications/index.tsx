@@ -95,7 +95,9 @@ const AdminNotificationsPage: React.FC = () => {
                         style={{
                             marginBottom: 16,
                             opacity: item.isRead ? 0.7 : 1,
-                            borderLeft: item.isRead ? '1px solid #f0f0f0' : '4px solid #1890ff'
+                            borderLeft: item.isRead
+                                ? `1px solid ${token.colorBorder}`
+                                : `4px solid ${token.colorPrimary}`
                         }}
                         styles={{ body: { padding: '16px 24px' } }}
                     >

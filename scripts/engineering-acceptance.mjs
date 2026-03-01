@@ -39,6 +39,22 @@ const steps = [
   {
     id: "B2",
     gate: "Gate B Frontend",
+    name: "Lint",
+    cwd: appDir,
+    command: "npm",
+    args: ["run", "lint"],
+  },
+  {
+    id: "B3",
+    gate: "Gate B Frontend",
+    name: "Unit tests",
+    cwd: appDir,
+    command: "npm",
+    args: ["run", "test:run"],
+  },
+  {
+    id: "B4",
+    gate: "Gate B Frontend",
     name: "Build",
     cwd: appDir,
     command: "npm",

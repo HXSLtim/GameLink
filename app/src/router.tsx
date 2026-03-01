@@ -12,7 +12,7 @@ import { ProfilePage } from "@/features/profile/ProfilePage"
 import { ReviewsPage } from "@/features/reviews/ReviewsPage"
 import { WalletPage } from "@/features/wallet/WalletPage"
 
-export const router = createBrowserRouter([
+export const appRoutes = [
   {
     path: "/",
     element: <App />,
@@ -72,4 +72,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-])
+]
+
+export const router = createBrowserRouter(appRoutes)

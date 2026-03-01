@@ -26,7 +26,7 @@ const UserPortrait: React.FC = () => {
                 <Col span={8}>
                     <Card title="基础信息">
                         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                            <Avatar size={100} icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
+                            <Avatar size={100} icon={<UserOutlined />} style={{ backgroundColor: 'var(--ant-color-primary)' }} />
                             <h2 style={{ marginTop: 16 }}>示例用户</h2>
                             <Tag color="blue">90后</Tag>
                             <Tag color="green">北京</Tag>

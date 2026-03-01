@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig, type Plugin, type ViteDevServer } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import viteCompression from 'vite-plugin-compression'
@@ -54,7 +54,11 @@ function showNetworkIPs(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const enablePwa = env.VITE_ENABLE_PWA === 'true'
+
+  return {
   // Vite 缓存目录（Vitest 会使用 cacheDir/vitest）
   cacheDir: 'node_modules/.vite',
   // Vitest 测试配置
@@ -80,8 +84,8 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     showNetworkIPs(), // 显示所有网络IP地址
-    // PWA 支持
-    VitePWA({
+    // PWA 支持（默认关闭，防止缓存劫持；需要时通过 VITE_ENABLE_PWA=true 显式启用）
+    enablePwa && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
@@ -247,38 +251,6 @@ export default defineConfig(({ mode }) => ({
     // Rollup 配置
     rollupOptions: {
       output: {
-        // 手动代码分割策略
-        manualChunks: (id) => {
-          // React 核心库 + React Router（合并到一起，避免加载顺序问题）
-          if (id.includes('node_modules/react/') ||
-              id.includes('node_modules/react-dom/') ||
-              id.includes('node_modules/scheduler/') ||
-              id.includes('node_modules/react-router') ||
-              id.includes('node_modules/@remix-run')) {
-            return 'react-vendor';
-          }
-          // Ant Design - 独立分包（按需导入后仍然较大）
-          if (id.includes('node_modules/antd/') ||
-              id.includes('node_modules/@ant-design/')) {
-            return 'antd-vendor';
-          }
-          // Recharts 图表库 - 独立分包
-          if (id.includes('node_modules/recharts/') ||
-              id.includes('node_modules/d3-') ||
-              id.includes('node_modules/victory-')) {
-            return 'charts-vendor';
-          }
-          // 工具库（独立，不依赖其他库）
-          if (id.includes('node_modules/axios') ||
-              id.includes('node_modules/dayjs') ||
-              id.includes('node_modules/lodash-es')) {
-            return 'utils-vendor';
-          }
-          // Iconify 图标库
-          if (id.includes('node_modules/@iconify/')) {
-            return 'icons-vendor';
-          }
-        },
         // 自定义 chunk 文件名
         chunkFileNames: 'assets/js/[name]-[hash].js',
         // 自定义入口文件名
@@ -318,4 +290,5 @@ export default defineConfig(({ mode }) => ({
     // 报告压缩后的文件大小
     reportCompressedSize: true,
   },
-}))
+}
+})

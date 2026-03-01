@@ -255,7 +255,9 @@ const RolePermissionConfig: React.FC = () => {
                     title={
                         <Space>
                             <SafetyCertificateOutlined
-                                style={{ color: role.isSystem ? '#1890ff' : '#52c41a' }}
+                                style={{
+                                    color: role.isSystem ? 'var(--ant-color-primary)' : 'var(--ant-color-success)',
+                                }}
                             />
                             <span>角色信息</span>
                             {role.isSystem && <Tag color="blue">系统角色</Tag>}

@@ -200,7 +200,11 @@ export function usePolling<T>(options: PollingOptions<T>): {
     mountedRef.current = true
 
     if (immediate) {
-      start()
+      queueMicrotask(() => {
+        if (mountedRef.current) {
+          start()
+        }
+      })
     }
 
     return () => {

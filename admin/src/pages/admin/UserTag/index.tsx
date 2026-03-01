@@ -33,6 +33,7 @@ import type { SearchField } from '@/components';
 import { exportToCSV, type ExportColumn } from '@/utils/export';
 import dayjs from 'dayjs';
 import apiClient from '@/api/client';
+import { GAMELINK_PRIMARY } from '@/theme';
 
 import { logger } from '@/utils/logger';
 /**
@@ -134,7 +135,7 @@ const UserTagPage: React.FC = () => {
     const handleCreate = () => {
         setCurrentTag(null);
         form.resetFields();
-        form.setFieldsValue({ color: '#1890ff' });
+        form.setFieldsValue({ color: GAMELINK_PRIMARY.base });
         setEditVisible(true);
     };
 
@@ -375,7 +376,9 @@ const UserTagPage: React.FC = () => {
                             {() => {
                                 const name = form.getFieldValue('name') || '标签预览';
                                 const colorValue = form.getFieldValue('color');
-                                const color = typeof colorValue === 'string' ? colorValue : colorValue?.toHexString?.() || '#1890ff';
+                                const color = typeof colorValue === 'string'
+                                    ? colorValue
+                                    : colorValue?.toHexString?.() || GAMELINK_PRIMARY.base;
                                 return <Tag color={color} style={{ fontSize: 14, padding: '4px 12px' }}>{name}</Tag>;
                             }}
                         </Form.Item>

@@ -19,6 +19,11 @@ export {
   type StatusColorKey,
   type IconBgColorKey,
 } from './colors';
+export {
+  GAMELINK_PRIMARY,
+  gamelinkThemeToken,
+  gamelinkThemeComponents,
+} from './antdTheme';
 
 // 间距
 export {

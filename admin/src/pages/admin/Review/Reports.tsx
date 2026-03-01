@@ -382,7 +382,7 @@ const ReviewReports: React.FC = () => {
               </Radio>
               <Radio value="reject">
                 <Space>
-                  <CloseCircleOutlined style={{ color: '#1890ff' }} />
+                  <CloseCircleOutlined style={{ color: 'var(--ant-color-primary)' }} />
                   驳回举报 - 举报不成立
                 </Space>
               </Radio>

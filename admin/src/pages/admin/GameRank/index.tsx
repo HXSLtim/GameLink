@@ -27,6 +27,7 @@ import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { adminApi, type GameRank, type Game } from '@/api/admin';
 import dayjs from 'dayjs';
+import { GAMELINK_PRIMARY } from '@/theme';
 import { logger } from '@/utils/logger';
 
 const { Text } = Typography;
@@ -110,7 +111,7 @@ const GameRankPage: React.FC = () => {
         setEditingRank(record);
         form.setFieldsValue({
             ...record,
-            color: record.color || '#1890ff',
+            color: record.color || GAMELINK_PRIMARY.base,
         });
         setModalVisible(true);
     };
@@ -132,7 +133,9 @@ const GameRankPage: React.FC = () => {
             const values = await form.validateFields();
             const data = {
                 ...values,
-                color: typeof values.color === 'string' ? values.color : values.color?.toHexString?.() || '#1890ff',
+                color: typeof values.color === 'string'
+                    ? values.color
+                    : values.color?.toHexString?.() || GAMELINK_PRIMARY.base,
             };
 
             if (editingRank) {

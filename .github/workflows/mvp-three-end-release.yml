@@ -1,0 +1,179 @@
+name: MVP Three-End Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      install_deps:
+        description: "Run npm ci / go mod download before gates"
+        required: false
+        default: true
+        type: boolean
+      with_flow_guard:
+        description: "Run flow-guard regression"
+        required: false
+        default: true
+        type: boolean
+      with_withdraw_regression:
+        description: "Run withdraw regression"
+        required: false
+        default: true
+        type: boolean
+      with_full_acceptance:
+        description: "Run full service flow acceptance"
+        required: false
+        default: false
+        type: boolean
+      strict_release:
+        description: "Enforce required regression switches for release run"
+        required: false
+        default: true
+        type: boolean
+      base_url:
+        description: "API base url for regression scripts"
+        required: false
+        default: "http://127.0.0.1:8080/api/v1"
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  GO_VERSION: "1.25.7"
+
+jobs:
+  mvp-release:
+    name: MVP Three-End Release Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gamelink
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: gamelink_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gamelink -d gamelink_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: api/go.sum
+
+      - name: Validate strict release input set
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event.inputs.strict_release }}" == "true" ]]; then
+            if [[ "${{ github.event.inputs.with_flow_guard }}" != "true" || "${{ github.event.inputs.with_withdraw_regression }}" != "true" ]]; then
+              echo "strict_release=true requires with_flow_guard=true and with_withdraw_regression=true"
+              exit 1
+            fi
+          fi
+
+      - name: Start backend with seed data
+        working-directory: api
+        env:
+          APP_ENV: development
+          DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
+          CACHE_TYPE: redis
+          REDIS_ADDR: localhost:6379
+          JWT_SECRET_KEY: test-secret-key-for-mvp-release-workflow-32chars
+          SEED_ENABLED: "true"
+          CRYPTO_ENABLED: "false"
+        run: |
+          nohup go run cmd/main.go > backend.log 2>&1 &
+          echo $! > backend.pid
+
+      - name: Wait backend health
+        working-directory: api
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8080/api/v1/healthz >/dev/null; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become ready in time"
+          tail -n 200 backend.log || true
+          exit 1
+
+      - name: Run MVP three-end release orchestration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ARGS=()
+          if [[ "${{ github.event.inputs.install_deps }}" == "true" ]]; then
+            ARGS+=("--install-deps")
+          fi
+          if [[ "${{ github.event.inputs.with_flow_guard }}" == "true" ]]; then
+            ARGS+=("--with-flow-guard")
+          fi
+          if [[ "${{ github.event.inputs.with_withdraw_regression }}" == "true" ]]; then
+            ARGS+=("--with-withdraw-regression")
+          fi
+          if [[ "${{ github.event.inputs.with_full_acceptance }}" == "true" ]]; then
+            ARGS+=("--with-full-acceptance")
+          fi
+
+          if [[ "${{ github.event.inputs.strict_release }}" == "true" ]]; then
+            ARGS+=("--strict-release")
+          fi
+
+          ARGS+=("--base-url=${{ github.event.inputs.base_url }}")
+          node scripts/mvp-three-end-release.mjs "${ARGS[@]}"
+
+      - name: Validate MVP release reports
+        run: node scripts/validate-mvp-release-report.mjs
+
+      - name: Upload MVP release report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mvp-three-end-release-report
+          path: |
+            docs/reports/mvp-three-end-release-report.md
+            docs/reports/engineering-acceptance-report.md
+            docs/MVP_RELEASE_NEXT_PHASE_EXECUTION_BOARD.md
+            docs/MVP_RELEASE_MINIMUM_ROLLBACK_CHECKLIST.md
+            api/backend.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Cleanup backend process
+        if: always()
+        working-directory: api
+        run: |
+          if [ -f backend.pid ]; then
+            kill "$(cat backend.pid)" || true
+          fi

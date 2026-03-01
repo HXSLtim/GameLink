@@ -282,7 +282,15 @@ jobs:
         working-directory: app
         run: npm run type-check
 
-      # NOTE: app 当前无统一 lint/test 命令，先以 type-check 作为 CI 质量门禁
+      # CRITICAL: Code quality gate - linter failures block the build
+      - name: Run linter
+        working-directory: app
+        run: npm run lint
+
+      # CRITICAL: Code quality gate - unit test failures block the build
+      - name: Run unit tests
+        working-directory: app
+        run: npm run test:run
 
   # App 端构建
   app-build:

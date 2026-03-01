@@ -86,10 +86,10 @@ interface AmountDisplayProps {
 // 类型颜色配置
 const TYPE_COLORS: Record<AmountType, string> = {
   default: 'inherit',
-  income: '#52c41a',
-  expense: '#ff4d4f',
-  frozen: '#faad14',
-  refund: '#1890ff',
+  income: 'var(--ant-color-success)',
+  expense: 'var(--ant-color-error)',
+  frozen: 'var(--ant-color-warning)',
+  refund: 'var(--ant-color-primary)',
 };
 
 // 尺寸配置

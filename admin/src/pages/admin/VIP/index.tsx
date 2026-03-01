@@ -38,6 +38,7 @@ import { StateContainer } from '@/components/common/StateContainer';
 import LevelForm from './components/LevelForm';
 import BenefitsEditor from './components/BenefitsEditor';
 import dayjs from 'dayjs';
+import { GAMELINK_PRIMARY } from '@/theme';
 
 import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
@@ -189,7 +190,7 @@ const VIPPage: React.FC = () => {
 
     const renderVIPCard = (level: VIPLevel) => {
         const benefits = parseBenefits(level.benefits);
-        const levelColor = level.color || '#1890ff';
+        const levelColor = level.color || GAMELINK_PRIMARY.base;
 
         return (
             <Col key={level.id} xs={24} sm={12} lg={8} xl={6}>
