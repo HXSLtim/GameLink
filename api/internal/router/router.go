@@ -77,14 +77,14 @@ func (r *Router) Setup() *gin.Engine {
 
 	// 注册全局中间件（按顺序执行）
 	r.engine.Use(middleware.RequestID())
-	r.engine.Use(middleware.SlogLogger())                                   // 结构化访问日志
-	r.engine.Use(middleware.MetricsMiddleware(r.services.realtimeSvc))      // HTTP 指标，传入monitor service
-	r.engine.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig())) // 限流中间件
-	r.engine.Use(middleware.Signature(r.cfg.Signature))                     // HMAC-SHA256签名验证
-	r.engine.Use(middleware.Crypto(r.cfg.Crypto))                           // 请求解密
-	r.engine.Use(middleware.ErrorMap())                                     // 统一错误映射
-	r.engine.Use(middleware.Recovery())                                     // 统一JSON恢复中间件
-	r.engine.Use(middleware.CORS())                                         // CORS中间件
+	r.engine.Use(middleware.SlogLogger())                              // 结构化访问日志
+	r.engine.Use(middleware.MetricsMiddleware(r.services.realtimeSvc)) // HTTP 指标，传入monitor service
+	// 全局限流已移除，改为按路由组差异化限流
+	r.engine.Use(middleware.Signature(r.cfg.Signature)) // HMAC-SHA256签名验证
+	r.engine.Use(middleware.Crypto(r.cfg.Crypto))       // 请求解密
+	r.engine.Use(middleware.ErrorMap())                 // 统一错误映射
+	r.engine.Use(middleware.Recovery())                 // 统一JSON恢复中间件
+	r.engine.Use(middleware.CORS())                     // CORS中间件
 
 	// 注册所有路由
 	r.registerRoutes()
@@ -224,18 +224,34 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	// Register admin routes under versioned prefix: /api/v1/admin
 	rbacGroup := api.Group("/admin")
 
+	// 管理端限流：5 RPS
+	rbacGroup.Use(middleware.RateLimit(middleware.AdminRateLimitConfig()))
+
 	// CSRF 保护配置
-	// 根据环境变量决定是否启用 CSRF
-	csrfEnabled := os.Getenv("CSRF_ENABLED") == "true"
-	if csrfEnabled {
-		// 生产环境使用更严格的配置
-		isProduction := os.Getenv("APP_ENV") == "production"
+	// 生产环境和预发布环境强制启用 CSRF 保护
+	env := os.Getenv("APP_ENV")
+	isProduction := env == "production"
+	isStaging := env == "staging"
+
+	if isProduction || isStaging {
+		// 生产/预发布环境：强制启用 CSRF
 		csrfConfig := middleware.DefaultCSRFConfig
-		csrfConfig.CookieSecure = isProduction
-		if isProduction {
-			csrfConfig.CookieSameSite = http.SameSiteStrictMode
-		}
+		csrfConfig.CookieSecure = true // 强制 HTTPS
+		csrfConfig.CookieSameSite = http.SameSiteStrictMode
 		rbacGroup.Use(middleware.CSRF(csrfConfig))
+		log.Println("[security] CSRF protection enabled (production/staging)")
+	} else {
+		// 开发环境：可选启用（通过环境变量）
+		csrfEnabled := os.Getenv("CSRF_ENABLED") == "true"
+		if csrfEnabled {
+			csrfConfig := middleware.DefaultCSRFConfig
+			csrfConfig.CookieSecure = false // 开发环境允许 HTTP
+			csrfConfig.CookieSameSite = http.SameSiteLaxMode
+			rbacGroup.Use(middleware.CSRF(csrfConfig))
+			log.Println("[security] CSRF protection enabled (development)")
+		} else {
+			log.Println("[security] CSRF protection disabled (development) - set CSRF_ENABLED=true to enable")
+		}
 	}
 
 	// Stats routes (需要先创建statsSvc，因为RegisterRoutes需要它)

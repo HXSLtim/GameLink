@@ -89,19 +89,20 @@ func TestCORS_ProductionDefaultsToDeny(t *testing.T) {
 	}()
 
 	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(CORS())
-	router.GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
-	})
 
-	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("Origin", "https://malicious-site.com")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	// Expect panic when CORS_ALLOWED_ORIGINS is not configured in production
+	assert.Panics(t, func() {
+		router := gin.New()
+		router.Use(CORS())
+		router.GET("/test", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
 
-	// Should NOT have CORS headers
-	assert.Empty(t, w.Header().Get("Access-Control-Allow-Origin"), "Production should not allow unknown origins")
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.Header.Set("Origin", "https://malicious-site.com")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+	}, "Production should panic when CORS_ALLOWED_ORIGINS is not configured")
 }
 
 func TestCORS_ProductionWithExplicitOrigins(t *testing.T) {
@@ -165,13 +166,14 @@ func TestCORS_DevelopmentDefaults(t *testing.T) {
 		origin      string
 		shouldAllow bool
 	}{
-		{"http://localhost:5173", true},
-		{"http://localhost:3000", true},
+		{"http://localhost:5173", true},  // admin frontend
+		{"http://localhost:5175", true},  // user app frontend
 		{"http://127.0.0.1:5173", true},
-		{"http://127.0.0.1:3000", true},
-		// Development mode uses wildcard ("*") to support LAN access,
-		// so all origins are allowed. Production/staging blocks unknown origins.
-		{"https://malicious-site.com", true},
+		{"http://127.0.0.1:5175", true},
+		// Development mode now uses explicit whitelist instead of wildcard
+		// for better security. Unknown origins are blocked.
+		{"http://localhost:3000", false},
+		{"https://malicious-site.com", false},
 	}
 
 	for _, tt := range tests {
@@ -183,9 +185,9 @@ func TestCORS_DevelopmentDefaults(t *testing.T) {
 
 			allowHeader := w.Header().Get("Access-Control-Allow-Origin")
 			if tt.shouldAllow {
-				assert.Equal(t, tt.origin, allowHeader, "Should allow all origins in development (wildcard)")
+				assert.Equal(t, tt.origin, allowHeader, "Should allow whitelisted localhost origins in development")
 			} else {
-				assert.Empty(t, allowHeader, "Should not allow external sites in development")
+				assert.Empty(t, allowHeader, "Should not allow non-whitelisted origins in development")
 			}
 		})
 	}
@@ -199,17 +201,18 @@ func TestCORS_StagingDefaultsToDeny(t *testing.T) {
 	}()
 
 	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(CORS())
-	router.GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
-	})
 
-	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("Origin", "https://malicious-site.com")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	// Expect panic when CORS_ALLOWED_ORIGINS is not configured in staging
+	assert.Panics(t, func() {
+		router := gin.New()
+		router.Use(CORS())
+		router.GET("/test", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
 
-	// Staging should also default to deny
-	assert.Empty(t, w.Header().Get("Access-Control-Allow-Origin"), "Staging should not allow unknown origins")
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.Header.Set("Origin", "https://malicious-site.com")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+	}, "Staging should panic when CORS_ALLOWED_ORIGINS is not configured")
 }

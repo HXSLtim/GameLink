@@ -2,29 +2,57 @@ package game
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	"gorm.io/gorm"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/pkg/cache"
+)
+
+const (
+	cacheKeyGamesList = "games:list:all"
+	cacheTTLGames     = 1 * time.Hour
 )
 
 // gormGameRepository 使用 GORM 实现游戏管理。
 type gormGameRepository struct {
-	db *gorm.DB
+	db    *gorm.DB
+	cache cache.Cache
 }
 
 // NewGameRepository 创建 GORM 仓储实例。
 func NewGameRepository(db *gorm.DB) repository.GameRepository {
-	return &gormGameRepository{db: db}
+	return &gormGameRepository{db: db, cache: nil}
+}
+
+// NewGameRepositoryWithCache 创建带缓存的 GORM 仓储实例。
+func NewGameRepositoryWithCache(db *gorm.DB, cache cache.Cache) repository.GameRepository {
+	return &gormGameRepository{db: db, cache: cache}
 }
 
 // List returns all games ordered by creation time.
 func (r *gormGameRepository) List(ctx context.Context) ([]model.Game, error) {
+	// Try cache first
+	if r.cache != nil {
+		if cached, ok, _ := r.cache.Get(ctx, cacheKeyGamesList); ok {
+			var games []model.Game
+			if err := json.Unmarshal([]byte(cached), &games); err == nil {
+				return games, nil
+			}
+		}
+	}
+
+	// Cache miss, query database
 	var games []model.Game
 	if err := r.db.WithContext(ctx).Order("created_at DESC").Find(&games).Error; err != nil {
 		return nil, err
 	}
+
+	// Cache the result
+	r.cacheGamesList(ctx, games)
 	return games, nil
 }
 
@@ -102,7 +130,12 @@ func (r *gormGameRepository) GetByIDs(ctx context.Context, ids []uint64) ([]mode
 
 // Create inserts a new game.
 func (r *gormGameRepository) Create(ctx context.Context, game *model.Game) error {
-	return r.db.WithContext(ctx).Create(game).Error
+	if err := r.db.WithContext(ctx).Create(game).Error; err != nil {
+		return err
+	}
+	// Invalidate cache
+	r.invalidateCache(ctx)
+	return nil
 }
 
 // Update updates editable fields of a game.
@@ -120,6 +153,8 @@ func (r *gormGameRepository) Update(ctx context.Context, game *model.Game) error
 	if tx.RowsAffected == 0 {
 		return repository.ErrNotFound
 	}
+	// Invalidate cache
+	r.invalidateCache(ctx)
 	return nil
 }
 
@@ -132,6 +167,8 @@ func (r *gormGameRepository) Delete(ctx context.Context, id uint64) error {
 	if tx.RowsAffected == 0 {
 		return repository.ErrNotFound
 	}
+	// Invalidate cache
+	r.invalidateCache(ctx)
 	return nil
 }
 
@@ -144,6 +181,8 @@ func (r *gormGameRepository) BatchDelete(ctx context.Context, ids []uint64) (int
 	if tx.Error != nil {
 		return 0, tx.Error
 	}
+	// Invalidate cache
+	r.invalidateCache(ctx)
 	return tx.RowsAffected, nil
 }
 
@@ -156,6 +195,8 @@ func (r *gormGameRepository) BatchUpdateStatus(ctx context.Context, ids []uint64
 	if tx.Error != nil {
 		return 0, tx.Error
 	}
+	// Invalidate cache
+	r.invalidateCache(ctx)
 	return tx.RowsAffected, nil
 }
 
@@ -174,6 +215,8 @@ func (r *gormGameRepository) BatchUpdateSortOrder(ctx context.Context, updates m
 		totalAffected += tx.RowsAffected
 	}
 
+	// Invalidate cache
+	r.invalidateCache(ctx)
 	return totalAffected, nil
 }
 
@@ -186,5 +229,27 @@ func (r *gormGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint
 	if tx.Error != nil {
 		return 0, tx.Error
 	}
+	// Invalidate cache
+	r.invalidateCache(ctx)
 	return tx.RowsAffected, nil
+}
+
+// cacheGamesList caches the games list.
+func (r *gormGameRepository) cacheGamesList(ctx context.Context, games []model.Game) {
+	if r.cache == nil {
+		return
+	}
+	data, err := json.Marshal(games)
+	if err != nil {
+		return
+	}
+	_ = r.cache.Set(ctx, cacheKeyGamesList, string(data), cacheTTLGames)
+}
+
+// invalidateCache clears the games list cache.
+func (r *gormGameRepository) invalidateCache(ctx context.Context) {
+	if r.cache == nil {
+		return
+	}
+	_ = r.cache.Delete(ctx, cacheKeyGamesList)
 }

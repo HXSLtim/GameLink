@@ -5,7 +5,9 @@ package apierr
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -30,6 +32,9 @@ type APIError struct {
 	RequestID  string                 `json:"requestId,omitempty"`
 	Timestamp  int64                  `json:"timestamp"`
 	Extensions map[string]interface{} `json:"extensions,omitempty"`
+
+	// Internal fields (not exposed in JSON)
+	internalError error `json:"-"` // Original error for logging
 }
 
 // Error implements the error interface
@@ -46,9 +51,41 @@ func New(code int, message string) *APIError {
 	}
 }
 
-// WithDetails adds error details
+// WithDetails adds error details (sanitized for production)
 func (e *APIError) WithDetails(details string) *APIError {
+	// In production, don't expose internal details
+	if isProduction() {
+		// Log the details but don't expose them
+		if e.internalError != nil {
+			slog.Error("API error details",
+				"code", e.Code,
+				"message", e.Message,
+				"details", details,
+				"internal_error", e.internalError.Error())
+		} else {
+			slog.Error("API error details",
+				"code", e.Code,
+				"message", e.Message,
+				"details", details)
+		}
+		// Don't set Details field in production
+		return e
+	}
+	// In development, expose details for debugging
 	e.Details = details
+	return e
+}
+
+// WithInternalError stores the original error for logging (never exposed to client)
+func (e *APIError) WithInternalError(err error) *APIError {
+	e.internalError = err
+	// Log immediately in production
+	if isProduction() && err != nil {
+		slog.Error("Internal error occurred",
+			"code", e.Code,
+			"message", e.Message,
+			"error", err.Error())
+	}
 	return e
 }
 
@@ -71,6 +108,37 @@ func (e *APIError) WithExtension(key string, value interface{}) *APIError {
 	}
 	e.Extensions[key] = value
 	return e
+}
+
+// Sanitize returns a sanitized version of the error for production
+func (e *APIError) Sanitize() *APIError {
+	if !isProduction() {
+		return e
+	}
+
+	// Create a clean copy without sensitive details
+	sanitized := &APIError{
+		Code:       e.Code,
+		Message:    e.Message,
+		Field:      e.Field,
+		RequestID:  e.RequestID,
+		Timestamp:  e.Timestamp,
+		Extensions: e.Extensions,
+		// Details and internalError are intentionally omitted
+	}
+
+	// Use generic messages for 5xx errors in production
+	if e.Code >= 500 {
+		sanitized.Message = "服务器内部错误，请稍后重试"
+	}
+
+	return sanitized
+}
+
+// isProduction checks if running in production environment
+func isProduction() bool {
+	env := os.Getenv("APP_ENV")
+	return env == "production" || env == "staging"
 }
 
 // BadRequest creates a 400 Bad Request error

@@ -314,7 +314,7 @@ func RateLimit(config RateLimiterConfig) gin.HandlerFunc {
 }
 
 // DefaultRateLimitConfig 返回默认限流配置
-// QPS 优化：提升限流阈值以支持更高并发
+// 差异化限流策略：管理端 5 RPS，公共端 20 RPS，认证端 10 RPS
 func DefaultRateLimitConfig() RateLimiterConfig {
 	// Development / local integration testing:
 	// - Most workflows run against localhost, but when the API is containerized the
@@ -329,12 +329,107 @@ func DefaultRateLimitConfig() RateLimiterConfig {
 
 	return RateLimiterConfig{
 		Enabled:               enabled, // staging/production 启用；development 默认关闭
-		IPRequestsPerSecond:   50,      // 每秒50个请求（提升5倍）
-		UserRequestsPerMinute: 300,     // 每分钟300个请求（提升5倍）
+		IPRequestsPerSecond:   20,      // 默认每秒20个请求（公共端）
+		UserRequestsPerMinute: 300,     // 每分钟300个请求
 		WhitelistIPs:          []string{"127.0.0.1", "::1"},
 		WhitelistRoles:        []string{"superAdmin"},
+		RouteLimits:           getDefaultRouteLimits(),
+	}
+}
+
+// getDefaultRouteLimits 返回默认路由限流规则
+// 差异化限流策略：
+// - 管理端 (/admin): 5 RPS (300 RPM)
+// - 公共端 (/public): 20 RPS (1200 RPM)
+// - 认证端 (/auth): 10 RPS (600 RPM)
+// - 用户端 (/user, /player): 15 RPS (900 RPM)
+func getDefaultRouteLimits() map[string]RouteLimit {
+	limits := make(map[string]RouteLimit)
+
+	// 认证接口限流（防暴力破解）
+	limits["/api/v1/auth/login"] = RouteLimit{
+		Path:        "/api/v1/auth/login",
+		Requests:    10,           // 每分钟10次
+		Window:      time.Minute,
+		LimitByIP:   true,
+		LimitByUser: false,
+	}
+	limits["/api/v1/auth/register"] = RouteLimit{
+		Path:        "/api/v1/auth/register",
+		Requests:    20,          // 每小时20次
+		Window:      time.Hour,
+		LimitByIP:   true,
+		LimitByUser: false,
+	}
+	limits["/api/v1/auth/refresh"] = RouteLimit{
+		Path:        "/api/v1/auth/refresh",
+		Requests:    600,         // 每分钟10次
+		Window:      time.Minute,
+		LimitByIP:   false,
+		LimitByUser: true,
+	}
+
+	// 支付接口限流（高风险操作）
+	limits["/api/v1/user/orders/:id/pay"] = RouteLimit{
+		Path:        "/api/v1/user/orders/:id/pay",
+		Requests:    30,
+		Window:      time.Minute,
+		LimitByIP:   false,
+		LimitByUser: true,
+	}
+	limits["/api/v1/user/wallet/withdraw"] = RouteLimit{
+		Path:        "/api/v1/user/wallet/withdraw",
+		Requests:    10,
+		Window:      time.Minute,
+		LimitByIP:   false,
+		LimitByUser: true,
+	}
+
+	return limits
+}
+
+// AdminRateLimitConfig 管理端限流配置（5 RPS = 300 RPM）
+func AdminRateLimitConfig() RateLimiterConfig {
+	env := strings.TrimSpace(os.Getenv("APP_ENV"))
+	enabled := env == "production" || env == "staging"
+
+	return RateLimiterConfig{
+		Enabled:               enabled,
+		IPRequestsPerSecond:   5,   // 管理端：每秒5个请求
+		UserRequestsPerMinute: 300, // 每分钟300个请求
+		WhitelistIPs:          []string{"127.0.0.1", "::1"},
+		WhitelistRoles:        []string{"superAdmin"},
+		RouteLimits:           make(map[string]RouteLimit),
+	}
+}
+
+// PublicRateLimitConfig 公共端限流配置（20 RPS = 1200 RPM）
+func PublicRateLimitConfig() RateLimiterConfig {
+	env := strings.TrimSpace(os.Getenv("APP_ENV"))
+	enabled := env == "production" || env == "staging"
+
+	return RateLimiterConfig{
+		Enabled:               enabled,
+		IPRequestsPerSecond:   20,   // 公共端：每秒20个请求
+		UserRequestsPerMinute: 1200, // 每分钟1200个请求
+		WhitelistIPs:          []string{"127.0.0.1", "::1"},
+		WhitelistRoles:        []string{},
+		RouteLimits:           make(map[string]RouteLimit),
+	}
+}
+
+// AuthRateLimitConfig 认证端限流配置（10 RPS = 600 RPM）
+func AuthRateLimitConfig() RateLimiterConfig {
+	env := strings.TrimSpace(os.Getenv("APP_ENV"))
+	enabled := env == "production" || env == "staging"
+
+	return RateLimiterConfig{
+		Enabled:               enabled,
+		IPRequestsPerSecond:   10,  // 认证端：每秒10个请求
+		UserRequestsPerMinute: 600, // 每分钟600个请求
+		WhitelistIPs:          []string{"127.0.0.1", "::1"},
+		WhitelistRoles:        []string{},
 		RouteLimits: map[string]RouteLimit{
-			// 登录接口限流：每分钟10次（防暴力破解）
 			"/api/v1/auth/login": {
 				Path:        "/api/v1/auth/login",
 				Requests:    10,
@@ -342,21 +437,12 @@ func DefaultRateLimitConfig() RateLimiterConfig {
 				LimitByIP:   true,
 				LimitByUser: false,
 			},
-			// 注册接口限流：每小时20次
 			"/api/v1/auth/register": {
 				Path:        "/api/v1/auth/register",
 				Requests:    20,
 				Window:      time.Hour,
 				LimitByIP:   true,
 				LimitByUser: false,
-			},
-			// 支付接口限流：每分钟30次
-			"/api/v1/user/orders/:id/pay": {
-				Path:        "/api/v1/user/orders/:id/pay",
-				Requests:    30,
-				Window:      time.Minute,
-				LimitByIP:   false,
-				LimitByUser: true,
 			},
 		},
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/middleware"
 	"gamelink/internal/handler/resp"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
@@ -25,6 +26,9 @@ import (
 // GET  /auth/me       -> return current user info (JWT required)
 func RegisterAuthRoutes(router gin.IRouter, svc *authservice.AuthService, referralTrigger *referralservice.TriggerService) {
 	auth := router.Group("/auth")
+	// 认证端限流：10 RPS
+	auth.Use(middleware.RateLimit(middleware.AuthRateLimitConfig()))
+
 	auth.POST("/login", func(c *gin.Context) { loginHandler(c, svc) })
 	auth.POST("/register", func(c *gin.Context) { registerHandler(c, svc, referralTrigger) })
 	auth.POST("/refresh", func(c *gin.Context) { refreshHandler(c, svc) })
@@ -70,7 +74,7 @@ type registerRequest struct {
 func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		resp.BadRequest(c, "无效的请求格式: "+err.Error())
+		resp.BadRequest(c, "无效的请求格式")
 		return
 	}
 
@@ -85,7 +89,8 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 		case service.ErrUserDisabled:
 			resp.Error(c, apierr.Forbidden("账号已被禁用"))
 		default:
-			resp.Error(c, apierr.Unauthorized("登录失败: "+err.Error()))
+			// Log internal error but don't expose details
+			resp.Error(c, apierr.Unauthorized("登录失败").WithInternalError(err))
 		}
 		return
 	}
@@ -130,7 +135,7 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 func registerHandler(c *gin.Context, svc *authservice.AuthService, referralTrigger *referralservice.TriggerService) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		resp.BadRequest(c, "无效的请求格式: "+err.Error())
+		resp.BadRequest(c, "无效的请求格式")
 		return
 	}
 
@@ -143,7 +148,7 @@ func registerHandler(c *gin.Context, svc *authservice.AuthService, referralTrigg
 		Role:     model.RoleUser,
 	})
 	if err != nil {
-		resp.Error(c, apierr.BadRequest("注册失败: "+err.Error()))
+		resp.Error(c, apierr.BadRequest("注册失败").WithInternalError(err))
 		return
 	}
 
@@ -174,7 +179,7 @@ func meHandler(c *gin.Context, svc *authservice.AuthService) {
 		case service.ErrUserDisabled:
 			resp.Error(c, apierr.Forbidden("账号已被禁用"))
 		default:
-			resp.Error(c, apierr.Unauthorized("认证失败: "+err.Error()))
+			resp.Error(c, apierr.Unauthorized("认证失败").WithInternalError(err))
 		}
 		return
 	}
@@ -198,7 +203,7 @@ func meHandler(c *gin.Context, svc *authservice.AuthService) {
 func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 	token, err := auth.ExtractTokenFromHeader(c.GetHeader("Authorization"))
 	if err != nil {
-		resp.Error(c, apierr.Unauthorized("无效的Token格式: "+err.Error()))
+		resp.Error(c, apierr.Unauthorized("无效的Token格式").WithInternalError(err))
 		return
 	}
 
@@ -208,7 +213,7 @@ func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 		case service.ErrUserDisabled:
 			resp.Error(c, apierr.Forbidden("账号已被禁用"))
 		default:
-			resp.Error(c, apierr.Unauthorized("刷新Token失败: "+err.Error()))
+			resp.Error(c, apierr.Unauthorized("刷新Token失败").WithInternalError(err))
 		}
 		return
 	}

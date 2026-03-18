@@ -20,16 +20,12 @@ import (
 // 或者
 // adminGroup.Use(middleware.JWTAuth(secretKey))
 func JWTAuth(secretKey string) gin.HandlerFunc {
-	// 验证密钥长度
-	if len(secretKey) < 32 {
-		logging.Error("JWT secret too short, must be at least 32 characters")
-		return func(c *gin.Context) {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-				"success": false,
-				"code":    http.StatusServiceUnavailable,
-				"message": "认证服务配置错误，请联系管理员",
-			})
-		}
+	// 增强的密钥验证：检查长度、强度和熵值
+	if err := auth.ValidateJWTSecret(secretKey); err != nil {
+		logging.Error("JWT secret validation failed", "error", err)
+		// 在生产环境中，应该 panic 而不是返回 503
+		// 这样可以在启动时就发现配置问题，而不是在运行时
+		panic("JWT secret validation failed: " + err.Error())
 	}
 
 	// Token有效期（24小时）
@@ -113,16 +109,10 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 
 // WSAuth WebSocket 认证中间件，支持 header / query / cookie
 func WSAuth(secretKey string) gin.HandlerFunc {
-	// 验证密钥长度
-	if len(secretKey) < 32 {
-		logging.Error("JWT secret too short, must be at least 32 characters")
-		return func(c *gin.Context) {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-				"success": false,
-				"code":    http.StatusServiceUnavailable,
-				"message": "认证服务配置错误，请联系管理员",
-			})
-		}
+	// 增强的密钥验证
+	if err := auth.ValidateJWTSecret(secretKey); err != nil {
+		logging.Error("JWT secret validation failed", "error", err)
+		panic("JWT secret validation failed: " + err.Error())
 	}
 
 	tokenDuration := auth.DefaultTokenDuration
@@ -246,16 +236,10 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 // 如果提供了Token则验证，如果没有提供Token则允许继续
 // 适用于那些既可以登录访问也可以匿名访问的接口
 func OptionalAuth(secretKey string) gin.HandlerFunc {
-	// 验证密钥长度
-	if len(secretKey) < 32 {
-		logging.Error("JWT secret too short, must be at least 32 characters")
-		return func(c *gin.Context) {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-				"success": false,
-				"code":    http.StatusServiceUnavailable,
-				"message": "认证服务配置错误，请联系管理员",
-			})
-		}
+	// 增强的密钥验证
+	if err := auth.ValidateJWTSecret(secretKey); err != nil {
+		logging.Error("JWT secret validation failed", "error", err)
+		panic("JWT secret validation failed: " + err.Error())
 	}
 
 	tokenDuration := auth.DefaultTokenDuration
@@ -344,16 +328,10 @@ func IsAuthenticated(c *gin.Context) bool {
 // 使用方法：
 // router.Use(middleware.JWTAuthWithRevocation(secretKey, cache))
 func JWTAuthWithRevocation(secretKey string, c cache.Cache) gin.HandlerFunc {
-	// 验证密钥长度
-	if len(secretKey) < 32 {
-		logging.Error("JWT secret too short, must be at least 32 characters")
-		return func(c *gin.Context) {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-				"success": false,
-				"code":    http.StatusServiceUnavailable,
-				"message": "认证服务配置错误，请联系管理员",
-			})
-		}
+	// 增强的密钥验证
+	if err := auth.ValidateJWTSecret(secretKey); err != nil {
+		logging.Error("JWT secret validation failed", "error", err)
+		panic("JWT secret validation failed: " + err.Error())
 	}
 
 	// Token有效期（24小时）

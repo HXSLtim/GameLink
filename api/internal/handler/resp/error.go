@@ -18,11 +18,13 @@ import (
 func Error(c *gin.Context, err error) {
 	// Handle apierr.APIError
 	if apiErr, ok := err.(*apierr.APIError); ok {
-		JSON[any](c, apiErr.Code, model.APIResponse[any]{
+		// Sanitize error for production
+		sanitized := apiErr.Sanitize()
+		JSON[any](c, sanitized.Code, model.APIResponse[any]{
 			Success: false,
-			Code:    apiErr.Code,
-			Message: apiErr.Message,
-			TraceID: apiErr.RequestID,
+			Code:    sanitized.Code,
+			Message: sanitized.Message,
+			TraceID: sanitized.RequestID,
 		})
 		return
 	}

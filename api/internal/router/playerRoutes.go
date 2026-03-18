@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/middleware"
 	playerhandler "gamelink/internal/handler/player"
 )
 
@@ -10,6 +11,8 @@ import (
 func registerPlayerRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, services *appServices) {
 	playerGroup := api.Group("/player")
 	playerGroup.Use(authMiddleware)
+	// 陪玩端限流：15 RPS（与用户端相同）
+	playerGroup.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig()))
 	{
 		playerhandler.RegisterProfileRoutes(playerGroup, services.playerSvc, authMiddleware)
 		playerhandler.RegisterOrderRoutes(playerGroup, services.orderSvc, authMiddleware)

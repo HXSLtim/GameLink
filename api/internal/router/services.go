@@ -203,7 +203,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	// 仓库实例（仅在此函数内部复用）
 	userRepo := userrepo.NewUserRepository(orm)
 	playerRepo := userrepo.NewPlayerRepository(orm)
-	gameRepo := gamerepo.NewGameRepository(orm)
+	gameRepo := gamerepo.NewGameRepositoryWithCache(orm, cacheClient)
 	gameRankRepo := gamerankrepo.NewGameRankRepository(orm)
 	orderRepo := orderrepo.NewOrderRepository(orm)
 	chatGroupRepo := chatrepo.NewChatGroupRepository(orm)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/middleware"
 	publichandler "gamelink/internal/handler/public"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/repository"
@@ -32,12 +33,14 @@ import (
 // registerPublicRoutes 注册公共 API 路由（无需认证）
 func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig, services *appServices) {
 	publicGroup := api.Group("/public")
+	// 公共端限流：20 RPS
+	publicGroup.Use(middleware.RateLimit(middleware.PublicRateLimitConfig()))
 
 	// 初始化仓库
 	userRepo := userrepo.NewUserRepository(orm)
 	playerRepo := playerrepo.NewPlayerRepository(orm)
 	playerServiceRepo := playerservicerepo.NewPlayerServiceRepository(orm)
-	gameRepo := gamerepo.NewGameRepository(orm)
+	gameRepo := gamerepo.NewGameRepositoryWithCache(orm, cacheClient)
 	gameCategoryRepo := gamecategoryrepo.NewGameCategoryRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
 	chatGroupRepo := chatrepo.NewChatGroupRepository(orm)

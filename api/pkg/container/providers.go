@@ -97,7 +97,7 @@ func ProvideCache(cfg config.AppConfig, reg *lifecycle.Registry) (cache.Cache, e
 // ProvideAdminService wires the admin service and its transactional manager.
 func ProvideAdminService(orm *gorm.DB, cacheClient cache.Cache) *adminservice.AdminService {
 	svc := adminservice.NewAdminService(adminservice.AdminDeps{
-		Games:          gamerepo.NewGameRepository(orm),
+		Games:          gamerepo.NewGameRepositoryWithCache(orm, cacheClient),
 		Users:          userrepo.NewUserRepository(orm),
 		Players:        userrepo.NewPlayerRepository(orm),
 		Orders:         orderrepo.NewOrderRepository(orm),

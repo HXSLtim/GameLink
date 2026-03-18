@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	playerStatsTodayTTL    = 30 * time.Second
-	playerStatsOverviewTTL = 2 * time.Minute
+	playerStatsTodayTTL    = 5 * time.Minute
+	playerStatsOverviewTTL = 5 * time.Minute
 )
 
 // PlayerStatsToday represents today's stats.

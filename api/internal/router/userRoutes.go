@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"gamelink/internal/handler/middleware"
 	userhandler "gamelink/internal/handler/user"
 	favoriterepo "gamelink/internal/repository/favorite"
 	playerrepo "gamelink/internal/repository/player"
@@ -14,6 +15,8 @@ import (
 func registerUserRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, services *appServices) {
 	userGroup := api.Group("/user")
 	userGroup.Use(authMiddleware)
+	// 用户端限流：15 RPS（默认配置）
+	userGroup.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig()))
 	{
 		userhandler.RegisterOrderRoutes(userGroup, services.orderSvc, authMiddleware)
 		userhandler.RegisterDisputeRoutes(userGroup, services.disputeSvc, authMiddleware)
@@ -41,6 +44,8 @@ func registerUserRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, se
 func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, services *appServices, orm *gorm.DB) {
 	userGroup := api.Group("/user")
 	userGroup.Use(authMiddleware)
+	// 用户端限流：15 RPS（默认配置）
+	userGroup.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig()))
 	{
 		userhandler.RegisterOrderRoutes(userGroup, services.orderSvc, authMiddleware)
 		userhandler.RegisterDisputeRoutes(userGroup, services.disputeSvc, authMiddleware)

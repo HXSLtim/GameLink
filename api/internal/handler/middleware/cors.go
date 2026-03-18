@@ -81,20 +81,27 @@ func getAllowedOrigins() []string {
 
 	// Security: Never use wildcard in production or staging
 	if env == "production" || env == "staging" {
-		// In production/staging, default to EMPTY (deny) unless explicitly configured.
-		// This prevents insecure wildcard. Set CORS_ALLOWED_ORIGINS to a comma-separated list.
+		// In production/staging, CORS_ALLOWED_ORIGINS is REQUIRED.
+		// Panic if not configured to prevent insecure wildcard usage.
 		// Example: CORS_ALLOWED_ORIGINS=https://gamelink.com,https://admin.gamelink.com
-		return parse(raw)
+		list := parse(raw)
+		if len(list) == 0 {
+			panic("CORS_ALLOWED_ORIGINS must be configured in production/staging environment")
+		}
+		return list
 	}
 
-	// Development: use safe defaults
+	// Development: use safe defaults (explicit whitelist)
 	if list := parse(raw); len(list) > 0 {
 		return list
 	}
 
-	// Development: allow all origins (echo back the request origin)
-	// This enables LAN access (192.168.x.x, 10.x.x.x, etc.) without
-	// needing to enumerate every possible dev machine IP.
-	// Production/staging will NEVER reach here — they return early above.
-	return []string{"*"}
+	// Development: use localhost whitelist instead of wildcard
+	// This provides security while supporting local development
+	return []string{
+		"http://localhost:5173", // admin frontend
+		"http://localhost:5175", // user app frontend
+		"http://127.0.0.1:5173",
+		"http://127.0.0.1:5175",
+	}
 }

@@ -277,6 +277,39 @@ export default defineConfig(({ mode }) => {
           }
           return `assets/${extType}/[name]-[hash][extname]`;
         },
+        // 代码分割策略 - 将大型依赖分离到独立 chunk
+        manualChunks: (id) => {
+          // React 核心库
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor';
+          }
+          // React Router
+          if (id.includes('node_modules/react-router-dom')) {
+            return 'router-vendor';
+          }
+          // Ant Design 组件库
+          if (id.includes('node_modules/antd') || id.includes('node_modules/@ant-design')) {
+            return 'antd-vendor';
+          }
+          // 图表库
+          if (id.includes('node_modules/recharts')) {
+            return 'chart-vendor';
+          }
+          // 状态管理和工具库
+          if (id.includes('node_modules/zustand') ||
+              id.includes('node_modules/lodash-es') ||
+              id.includes('node_modules/axios')) {
+            return 'utils-vendor';
+          }
+          // Socket.io
+          if (id.includes('node_modules/socket.io-client')) {
+            return 'socket-vendor';
+          }
+          // 其他 node_modules 依赖
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        },
       },
     },
     // 压缩配置
